@@ -58,7 +58,6 @@ import { ProjectInfoDialog } from "@/components/editor/dialogs/project-info-dial
 import { RenameProjectDialog } from "@/components/editor/dialogs/rename-project-dialog";
 import { cn } from "@/utils/ui";
 import { StorageIndicator } from "./storage-indicator";
-import { VideoModesBar } from "./video-modes-bar";
 
 const formatProjectDuration = ({
 	duration,
@@ -101,7 +100,6 @@ export default function ProjectsPage() {
 		<div className="bg-background min-h-screen">
 			<MigrationDialog />
 			<ProjectsHeader />
-			<VideoModesBar />
 			<ProjectsToolbar projectIds={projectsToDisplay.map((p) => p.id)} />
 			<main className="mx-auto px-4 pt-2 pb-6 flex flex-col gap-4">
 				{isLoading || !isInitialized ? (
