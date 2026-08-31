@@ -312,7 +312,7 @@ const handleExport = () => {
 
 ## 参考资料
 
-- [字幕服务 API](/Users/mac/Desktop/cutia/apps/web/src/services/renderer/subtitles/index.ts)
-- [组件源码](/Users/mac/Desktop/cutia/apps/web/src/components/editor/panels/subtitles/)
-- [使用示例](/Users/mac/Desktop/cutia/apps/web/src/components/editor/panels/subtitles/subtitle-panel-examples.tsx)
-- [测试文件](/Users/mac/Desktop/cutia/apps/web/src/components/editor/panels/subtitles/__tests__/)
+- [字幕服务 API](/Users/mac/Desktop/my-video-editor/apps/web/src/services/renderer/subtitles/index.ts)
+- [组件源码](/Users/mac/Desktop/my-video-editor/apps/web/src/components/editor/panels/subtitles/)
+- [使用示例](/Users/mac/Desktop/my-video-editor/apps/web/src/components/editor/panels/subtitles/subtitle-panel-examples.tsx)
+- [测试文件](/Users/mac/Desktop/my-video-editor/apps/web/src/components/editor/panels/subtitles/__tests__/)

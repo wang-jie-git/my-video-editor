@@ -148,10 +148,10 @@
 ## 参考文档
 
 - [FFmpeg 迁移任务清单](../../docs/08.FFmpeg迁移任务.md)
-- [PHASE-PLAN.md](/Users/mac/Desktop/cutia/PHASE-PLAN.md)
+- [PHASE-PLAN.md](/Users/mac/Desktop/my-video-editor/PHASE-PLAN.md)
 - [Phase 5 核心完成](../../.claude/memory/cutia-phase5-core-complete.md)
 - [Phase 5 UI 完成](../../.claude/memory/cutia-phase5-ui-complete.md)
 - [Phase 5 集成测试](../../.claude/memory/cutia-phase5-integration-complete.md)
-- [Day 32 详细报告](/Users/mac/Desktop/cutia/docs/phase5-day32-ui-complete.md)
-- [Day 33 详细报告](/Users/mac/Desktop/cutia/docs/phase5-day33-final-report.md)
+- [Day 32 详细报告](/Users/mac/Desktop/my-video-editor/docs/phase5-day32-ui-complete.md)
+- [Day 33 详细报告](/Users/mac/Desktop/my-video-editor/docs/phase5-day33-final-report.md)
 - [Day 34 高级功能](../../docs/phase5-day34-advanced-features.md)

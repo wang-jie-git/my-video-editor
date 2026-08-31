@@ -229,6 +229,6 @@ SubtitlePanel (主容器)
 
 ## 参考文档
 
-- [PHASE-PLAN.md](/Users/mac/Desktop/cutia/PHASE-PLAN.md)
+- [PHASE-PLAN.md](/Users/mac/Desktop/my-video-editor/PHASE-PLAN.md)
 - [Phase 5 核心完成](../../.claude/memory/cutia-phase5-core-complete.md)
-- [字幕服务 API](/Users/mac/Desktop/cutia/apps/web/src/services/renderer/subtitles/index.ts)
+- [字幕服务 API](/Users/mac/Desktop/my-video-editor/apps/web/src/services/renderer/subtitles/index.ts)

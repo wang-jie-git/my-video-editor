@@ -180,7 +180,7 @@ SubtitlePanel
 
 ## 参考
 
-- [Day 32 完成报告](/Users/mac/Desktop/cutia/docs/phase5-day32-ui-complete.md)
+- [Day 32 完成报告](/Users/mac/Desktop/my-video-editor/docs/phase5-day32-ui-complete.md)
 - [核心完成总结](../../.claude/memory/cutia-phase5-core-complete.md)
 - [字幕服务 API](../../src/services/renderer/subtitles/)
 - [UI 组件 README](../subtitles/README.md)

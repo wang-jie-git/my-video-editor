@@ -111,7 +111,7 @@ cannot be accessed from origin 'http://127.0.0.1:8888'.
 
 ```bash
 # 启动服务器
-cd /Users/mac/Desktop/cutia/apps/web/public
+cd /Users/mac/Desktop/my-video-editor/apps/web/public
 python3 -m http.server 8888 --bind 127.0.0.1
 
 # 访问（强制刷新）

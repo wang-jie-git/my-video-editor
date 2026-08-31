@@ -226,7 +226,7 @@ docs/
 ## 参考文档
 
 - [FFmpeg 迁移任务清单](../../docs/08.FFmpeg迁移任务.md)
-- [PHASE-PLAN.md](/Users/mac/Desktop/cutia/PHASE-PLAN.md)
+- [PHASE-PLAN.md](/Users/mac/Desktop/my-video-editor/PHASE-PLAN.md)
 - [Day 30-31 核心](../../.claude/memory/cutia-phase5-core-complete.md)
 - [Day 32 UI](../../.claude/memory/cutia-phase5-ui-complete.md)
 - [Day 33 集成](../../.claude/memory/cutia-phase5-integration-complete.md)

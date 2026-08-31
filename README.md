@@ -42,7 +42,7 @@ Cutia focuses on a simple idea: powerful basics should stay accessible.
 
 ```bash
 git clone <your-fork-url>
-cd cutia/apps/web
+cd my-video-editor/apps/web
 cp .env.example .env.local
 bun install
 bun dev
