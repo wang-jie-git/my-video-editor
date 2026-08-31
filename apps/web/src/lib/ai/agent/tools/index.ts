@@ -2,6 +2,7 @@ import type { OpenAIToolSchema } from "../types";
 import { aiGenerationTools } from "./ai-generation-tools";
 import { captionTools } from "./caption-tools";
 import { characterTools } from "./character-tools";
+import { ffmpegVideoTools } from "./ffmpeg-video-tools";
 import { frameTools } from "./frame-tools";
 import { mediaTools } from "./media-tools";
 import { projectTools } from "./project-tools";
@@ -18,6 +19,7 @@ const ALL_TOOLS: AgentTool[] = [
 	...aiGenerationTools,
 	...characterTools,
 	...ttsTools,
+	...ffmpegVideoTools,
 ];
 
 const toolMap = new Map<string, AgentTool>(
