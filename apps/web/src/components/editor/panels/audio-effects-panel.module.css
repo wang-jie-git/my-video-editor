@@ -1,0 +1,373 @@
+/**
+ * AudioEffectsPanel 样式
+ */
+
+.audioEffectsPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #ffffff);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.audioEffectsPanel.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--editor-text-muted, #888);
+}
+
+/* ==================== 面板头部 ==================== */
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--editor-border, #333);
+  background-color: var(--editor-panel-header, #252525);
+}
+
+.panelHeader h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.resetButton {
+  padding: 6px 12px;
+  background-color: transparent;
+  color: var(--editor-text, #ffffff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resetButton:hover:not(:disabled) {
+  background-color: var(--editor-panel-hover, #2a2a2a);
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.resetButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==================== Tab 导航 ==================== */
+
+.tabNavigation {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  background-color: var(--editor-panel-header, #252525);
+  border-bottom: 1px solid var(--editor-border, #333);
+}
+
+.tabButton {
+  flex: 1;
+  padding: 8px 16px;
+  background-color: transparent;
+  color: var(--editor-text-muted, #888);
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tabButton:hover:not(:disabled) {
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #ffffff);
+}
+
+.tabButton.active {
+  background-color: var(--editor-accent, #3b82f6);
+  color: white;
+}
+
+.tabButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==================== 内容区域 ==================== */
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.effectsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggleLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.presetSelect {
+  padding: 6px 12px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #ffffff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.presetSelect:hover:not(:disabled) {
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.presetSelect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==================== 均衡器 ==================== */
+
+.equalizerBands {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 8px;
+}
+
+.band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.bandLabel {
+  font-size: 11px;
+  color: var(--editor-text-muted, #888);
+  text-align: center;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 100px;
+  background: var(--editor-border, #333);
+  border-radius: 4px;
+  outline: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--editor-accent, #3b82f6);
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.slider::-webkit-slider-thumb:hover:not(:disabled) {
+  background: var(--editor-accent-hover, #2563eb);
+}
+
+.slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.slider::-webkit-slider-thumb:disabled {
+  cursor: not-allowed;
+}
+
+.bandValue {
+  font-size: 11px;
+  color: var(--editor-text, #ffffff);
+  font-weight: 500;
+}
+
+/* ==================== 压缩器 ==================== */
+
+.compressorControls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 8px;
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.controlLabel {
+  font-size: 12px;
+  color: var(--editor-text-muted, #888);
+  font-weight: 500;
+}
+
+.sliderWithValue {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sliderWithValue .slider {
+  flex: 1;
+  height: 24px;
+  writing-mode: horizontal-lr;
+  direction: ltr;
+}
+
+.sliderWithValue .slider::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+}
+
+.valueLabel {
+  min-width: 60px;
+  font-size: 12px;
+  color: var(--editor-text, #ffffff);
+  text-align: right;
+  font-weight: 500;
+}
+
+/* ==================== 混响 ==================== */
+
+.reverbControls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 8px;
+}
+
+/* ==================== 预设 ==================== */
+
+.presetsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.presetCategory {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.presetCategory h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--editor-text, #ffffff);
+}
+
+.presetList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.presetButton {
+  padding: 12px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #ffffff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.presetButton:hover:not(:disabled) {
+  background-color: var(--editor-panel-hover, #2a2a2a);
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.presetButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.presetName {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.presetDescription {
+  font-size: 11px;
+  color: var(--editor-text-muted, #888);
+  line-height: 1.4;
+}
+
+/* ==================== 响应式设计 ==================== */
+
+@media (max-width: 768px) {
+  .equalizerBands {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tabNavigation {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabButton {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .presetList {
+    gap: 6px;
+  }
+
+  .presetButton {
+    padding: 10px;
+  }
+}
