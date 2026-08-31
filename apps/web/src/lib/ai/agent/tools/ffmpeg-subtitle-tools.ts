@@ -481,7 +481,7 @@ Supported languages:
 - And more...`,
 	parameters: {
 		type: "object",
-		properties": {
+		properties: {
 			subtitleFile: {
 				type: "string",
 				description:
