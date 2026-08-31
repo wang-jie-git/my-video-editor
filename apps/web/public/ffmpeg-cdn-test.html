@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FFmpeg CDN Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .info { color: #3b82f6; }
+    pre { background: #0a0a0a; padding: 10px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>FFmpeg CDN 连接测试</h1>
+  <div id="results"></div>
+
+  <script type="module">
+    const results = document.getElementById('results')
+
+    async function testURL(url, name) {
+      const p = document.createElement('p')
+      p.className = 'info'
+      p.textContent = `测试 ${name}...`
+      results.appendChild(p)
+
+      try {
+        const response = await fetch(url)
+        const ok = response.ok
+        p.className = ok ? 'success' : 'error'
+        p.textContent = `${ok ? '✅' : '❌'} ${name}: ${response.status} ${response.statusText}`
+
+        if (ok) {
+          const size = response.headers.get('content-length')
+          const type = response.headers.get('content-type')
+          const info = document.createElement('pre')
+          info.textContent = `URL: ${url}\nSize: ${size ? Math.round(size/1024) + ' KB' : 'N/A'}\nType: ${type}`
+          results.appendChild(info)
+        }
+      } catch (error) {
+        p.className = 'error'
+        p.textContent = `❌ ${name}: ${error.message}`
+      }
+    }
+
+    // 测试 @ffmpeg/core 0.12.10
+    await testURL('https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm/ffmpeg-core.js', 'ffmpeg-core.js')
+    await testURL('https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm/ffmpeg-core.wasm', 'ffmpeg-core.wasm')
+
+    // 测试 @ffmpeg/ffmpeg 0.12.10
+    await testURL('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/ffmpeg.js', 'ffmpeg.js')
+
+    // 测试 @ffmpeg/util 0.12.10
+    await testURL('https://unpkg.com/@ffmpeg/util@0.12.10/dist/esm/util.js', 'util.js')
+
+    console.log('CDN 测试完成')
+  </script>
+</body>
+</html>

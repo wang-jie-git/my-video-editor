@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>FFmpeg 直接加载测试</title>
+	<style>
+		body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+		.success { color: #34d399; }
+		.error { color: #f87171; }
+		.info { color: #60a5fa; }
+		pre { background: #0a0a0a; padding: 15px; margin: 10px 0; max-height: 400px; overflow-y: auto; }
+		button { padding: 10px 20px; margin: 5px; background: #667eea; color: white; border: none; cursor: pointer; }
+		button:disabled { background: #666; cursor: not-allowed; }
+	</style>
+</head>
+<body>
+	<h1>FFmpeg 直接加载测试</h1>
+	<button id="fetchTest">1. 测试 Fetch</button>
+	<button id="scriptTest" disabled>2. 测试 Script 标签</button>
+	<button id="createTest" disabled>3. 创建实例</button>
+	<pre id="log"></pre>
+
+	<script>
+		const logEl = document.getElementById('log')
+		const fetchBtn = document.getElementById('fetchTest')
+		const scriptBtn = document.getElementById('scriptTest')
+		const createBtn = document.getElementById('createTest')
+
+		function log(msg, type = 'info') {
+			const line = `[${new Date().toLocaleTimeString()}] ${msg}\n`
+			logEl.textContent += line
+			console.log(msg)
+		}
+
+		function clearLog() {
+			logEl.textContent = ''
+		}
+
+		// 步骤 1: Fetch 测试
+		fetchBtn.addEventListener('click', async () => {
+			clearLog()
+			log('开始 Fetch 测试...')
+
+			try {
+				// 测试 util
+				log('1. 获取 @ffmpeg/util...')
+				const utilResp = await fetch('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js')
+				log(`状态: ${utilResp.status}`)
+				const utilText = await utilResp.text()
+				log(`Util 长度: ${utilText.length} 字符`)
+				log(`前100字符: ${utilText.substring(0, 100)}`)
+
+				// 测试 ffmpeg
+				log('\n2. 获取 @ffmpeg/ffmpeg...')
+				const ffmpegResp = await fetch('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.1/dist/esm/index.js')
+				log(`状态: ${ffmpegResp.status}`)
+				const ffmpegText = await ffmpegResp.text()
+				log(`FFmpeg 长度: ${ffmpegText.length} 字符`)
+				log(`前100字符: ${ffmpegText.substring(0, 100)}`)
+
+				log('\n✅ Fetch 测试成功！可以加载文件', 'success')
+				scriptBtn.disabled = false
+
+			} catch (err) {
+				log(`❌ Fetch 失败: ${err.message}`, 'error')
+			}
+		})
+
+		// 步骤 2: Script 标签测试
+		scriptBtn.addEventListener('click', () => {
+			clearLog()
+			log('开始 Script 标签测试...')
+			log('⏳ 创建 util script 标签...')
+
+			// 创建 script 标签
+			const utilScript = document.createElement('script')
+			utilScript.type = 'module'
+			utilScript.src = 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js'
+			utilScript.onload = () => {
+				log('✅ Util script 加载完成', 'success')
+
+				// 检查 util 的导出
+				log(`fetchFile: ${typeof window.fetchFile}`)
+				log(`toBlobURL: ${typeof window.toBlobURL}`)
+
+				if (typeof window.fetchFile === 'undefined') {
+					log('❌ fetchFile 未找到', 'error')
+					return
+				}
+
+				log('✅ Util 加载成功！', 'success')
+				createBtn.disabled = false
+			}
+			utilScript.onerror = () => {
+				log('❌ Util script 加载失败', 'error')
+			}
+			document.head.appendChild(utilScript)
+		})
+
+		// 步骤 3: 创建实例
+		createBtn.addEventListener('click', () => {
+			clearLog()
+			log('开始创建 FFmpeg 实例...')
+
+			try {
+				// 首先尝试从 script 标签加载
+				log('⏳ 创建 FFmpeg script 标签...')
+				const ffmpegScript = document.createElement('script')
+				ffmpegScript.type = 'module'
+				ffmpegScript.src = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.1/dist/esm/index.js'
+				ffmpegScript.onload = () => {
+					log('✅ FFmpeg script 加载完成', 'success')
+
+					// 检查
+					log(`FFmpeg: ${typeof window.FFmpeg}`)
+
+					if (typeof window.FFmpeg !== 'undefined') {
+						try {
+							const ffmpeg = new window.FFmpeg()
+							log(`✅ 实例创建成功！`, 'success')
+							log(`类型: ${ffmpeg.constructor.name}`)
+							log(`loaded: ${ffmpeg.loaded}`)
+							log('\n🎉 所有测试通过！', 'success')
+						} catch (err) {
+							log(`❌ 实例创建失败: ${err.message}`, 'error')
+						}
+					} else {
+						log('❌ FFmpeg 未定义', 'error')
+					}
+				}
+				ffmpegScript.onerror = () => {
+					log('❌ FFmpeg script 加载失败', 'error')
+				}
+				document.head.appendChild(ffmpegScript)
+
+			} catch (err) {
+				log(`❌ 失败: ${err.message}`, 'error')
+			}
+		})
+	</script>
+</body>
+</html>

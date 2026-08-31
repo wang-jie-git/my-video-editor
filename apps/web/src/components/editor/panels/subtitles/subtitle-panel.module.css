@@ -1,0 +1,1081 @@
+/**
+ * 字幕面板样式
+ */
+
+/* ==================== 主面板 ==================== */
+
+.subtitlePanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #ffffff);
+  overflow: hidden;
+}
+
+/* ==================== 空状态 ==================== */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px 20px;
+  color: var(--editor-text-muted, #888);
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.emptyText {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.emptyDescription {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.addTrackButton {
+  padding: 8px 16px;
+  background-color: var(--editor-accent, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.addTrackButton:hover {
+  background-color: var(--editor-accent-hover, #2563eb);
+}
+
+/* ==================== 轨道列表 ==================== */
+
+.trackListSection {
+  border-bottom: 1px solid var(--editor-border, #333);
+  background-color: var(--editor-panel-header, #252525);
+}
+
+.trackList {
+  display: flex;
+  flex-direction: column;
+  max-height: 300px;
+}
+
+.trackListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--editor-border, #333);
+}
+
+.trackListHeader h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.trackListItems {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 8px;
+  gap: 8px;
+}
+
+/* 轨道项 */
+.trackItem {
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 8px;
+  padding: 12px;
+  transition: border-color 0.2s;
+}
+
+.trackItem:hover {
+  border-color: var(--editor-border-hover, #444);
+}
+
+.trackItem.selected {
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+/* 轨道头部 */
+.trackHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.trackInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.trackCheckbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.trackDetails {
+  flex: 1;
+}
+
+.trackName {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.trackLanguage {
+  font-size: 12px;
+  color: var(--editor-text-muted, #888);
+}
+
+.removeTrackButton {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background-color: transparent;
+  color: var(--editor-text-muted, #888);
+  border: none;
+  border-radius: 4px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.removeTrackButton:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* 字幕列表 */
+.subtitleList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subtitleItem {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background-color: var(--editor-panel-secondary, #252525);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.subtitleItem:hover {
+  background-color: var(--editor-panel-secondary-hover, #2a2a2a);
+  border-color: var(--editor-border, #333);
+}
+
+.subtitleItem.selected {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.subtitleIndex {
+  font-size: 12px;
+  color: var(--editor-text-muted, #888);
+  min-width: 20px;
+}
+
+.subtitleContent {
+  flex: 1;
+  overflow: hidden;
+}
+
+.subtitleTime {
+  font-size: 11px;
+  color: var(--editor-text-muted, #888);
+  font-family: monospace;
+  margin-bottom: 2px;
+}
+
+.subtitleText {
+  font-size: 13px;
+  color: var(--editor-text, #fff);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.moreSubtitles {
+  font-size: 12px;
+  color: var(--editor-text-muted, #888);
+  padding: 4px 8px;
+  text-align: center;
+  background-color: var(--editor-panel-secondary, #252525);
+  border-radius: 4px;
+}
+
+/* ==================== 样式编辑器 ==================== */
+
+.styleEditorSection {
+  border-bottom: 1px solid var(--editor-border, #333);
+  background-color: var(--editor-panel-bg, #1e1e1e);
+}
+
+.styleEditor {
+  padding: 16px;
+}
+
+.styleEditorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.styleEditorHeader h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.styleEditorActions {
+  display: flex;
+  gap: 8px;
+}
+
+.presetSelect {
+  padding: 4px 8px;
+  background-color: var(--editor-panel-secondary, #252525);
+  color: var(--editor-text, #fff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.resetButton {
+  padding: 4px 8px;
+  background-color: transparent;
+  color: var(--editor-text-muted, #888);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resetButton:hover {
+  background-color: var(--editor-panel-secondary, #252525);
+  color: var(--editor-text, #fff);
+}
+
+.styleEditorContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.styleField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.styleFieldRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.styleFieldLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--editor-text-muted, #888);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.styleFieldLabel input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.styleSelect {
+  padding: 6px 8px;
+  background-color: var(--editor-panel-secondary, #252525);
+  color: var(--editor-text, #fff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.styleSlider {
+  flex: 1;
+  height: 4px;
+  background-color: var(--editor-border, #333);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.sliderWithValue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sliderValue {
+  font-size: 12px;
+  color: var(--editor-text-muted, #888);
+  min-width: 40px;
+  text-align: right;
+  font-family: monospace;
+}
+
+.colorPickerWrapper {
+  display: flex;
+  gap: 8px;
+}
+
+.colorPicker {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: transparent;
+}
+
+.colorInput {
+  flex: 1;
+  padding: 6px 8px;
+  background-color: var(--editor-panel-secondary, #252525);
+  color: var(--editor-text, #fff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.shadowSection {
+  padding-top: 8px;
+  border-top: 1px solid var(--editor-border, #333);
+}
+
+/* ==================== 字幕列表 ==================== */
+
+.subtitleListSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+}
+
+.subtitleListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--editor-border, #333);
+}
+
+.subtitleListHeader h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.addSubtitleButton {
+  padding: 4px 12px;
+  background-color: transparent;
+  color: var(--editor-accent, #3b82f6);
+  border: 1px solid var(--editor-accent, #3b82f6);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addSubtitleButton:hover {
+  background-color: var(--editor-accent, #3b82f6);
+  color: white;
+}
+
+.subtitleList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.subtitleListItem {
+  padding: 12px;
+  background-color: var(--editor-panel-secondary, #252525);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.subtitleListItem:hover {
+  background-color: var(--editor-panel-secondary-hover, #2a2a2a);
+  border-color: var(--editor-border, #333);
+}
+
+.subtitleListItem.selected {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.subtitleTime {
+  font-size: 11px;
+  color: var(--editor-text-muted, #888);
+  font-family: monospace;
+  margin-bottom: 4px;
+}
+
+.subtitleText {
+  font-size: 13px;
+  color: var(--editor-text, #fff);
+}
+
+/* ==================== 字幕编辑器 ==================== */
+
+.subtitleEditorSection {
+  border-top: 1px solid var(--editor-border, #333);
+  background-color: var(--editor-panel-secondary, #252525);
+}
+
+.subtitleEditor {
+  padding: 16px;
+}
+
+.editorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.editorHeader h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.editorActions {
+  display: flex;
+  gap: 8px;
+}
+
+.cancelButton {
+  padding: 6px 12px;
+  background-color: transparent;
+  color: var(--editor-text-muted, #888);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #fff);
+}
+
+.saveButton {
+  padding: 6px 12px;
+  background-color: var(--editor-accent, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: var(--editor-accent-hover, #2563eb);
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editorContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.editorField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--editor-text-muted, #888);
+}
+
+.textInput {
+  padding: 8px 12px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #fff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.textInput:focus {
+  outline: none;
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.timeInputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.timeInput {
+  padding: 6px 8px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #fff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.timeInput:focus {
+  outline: none;
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.durationDisplay {
+  padding: 6px 8px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: monospace;
+  color: var(--editor-text-muted, #888);
+}
+
+.styleInputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.errorMessage {
+  padding: 8px 12px;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* ==================== 预览 ==================== */
+
+.previewSection {
+  border-top: 1px solid var(--editor-border, #333);
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  padding: 16px;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.previewHeader h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.previewControls {
+  display: flex;
+  gap: 8px;
+}
+
+.previewButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--editor-panel-secondary, #252525);
+  color: var(--editor-text, #fff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.previewButton:hover {
+  background-color: var(--editor-accent, #3b82f6);
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.previewTimeline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.timeDisplay {
+  font-size: 12px;
+  color: var(--editor-text-muted, #888);
+  font-family: monospace;
+  min-width: 100px;
+}
+
+.timelineTrack {
+  flex: 1;
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.timelineProgress {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 4px;
+  background-color: var(--editor-accent, #3b82f6);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.timelineSlider {
+  width: 100%;
+  height: 4px;
+  background-color: var(--editor-border, #333);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.timelineSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background-color: var(--editor-accent, #3b82f6);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.timelineSlider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background-color: var(--editor-accent, #3b82f6);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.previewArea {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background-color: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewBackground {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.previewPlaceholder {
+  color: var(--editor-text-muted, #888);
+  font-size: 14px;
+}
+
+.previewSubtitle {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 16px;
+  border-radius: 4px;
+  max-width: 80%;
+  text-align: center;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.previewHint {
+  font-size: 13px;
+  color: var(--editor-text-muted, #888);
+  text-align: center;
+  padding: 8px;
+  background-color: var(--editor-panel-secondary, #252525);
+  border-radius: 4px;
+}
+
+.previewEmpty {
+  font-size: 13px;
+  color: var(--editor-text-muted, #888);
+  text-align: center;
+  padding: 20px;
+}
+
+/* ==================== 响应式设计 ==================== */
+
+@media (max-width: 768px) {
+  .styleFieldRow {
+    grid-template-columns: 1fr;
+  }
+
+  .timeInputs {
+    grid-template-columns: 1fr;
+  }
+
+  .sliderWithValue {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sliderValue {
+    min-width: auto;
+  }
+}
+
+/* ==================== Tab 导航 ==================== */
+
+.tabNavigation {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  background-color: var(--editor-panel-header, #252525);
+  border-bottom: 1px solid var(--editor-border, #333);
+}
+
+.tabButton {
+  padding: 8px 16px;
+  background-color: transparent;
+  color: var(--editor-text-muted, #888);
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tabButton:hover {
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #ffffff);
+}
+
+.tabButton.active {
+  background-color: var(--editor-accent, #3b82f6);
+  color: white;
+}
+
+/* ==================== 批量操作 ==================== */
+
+.batchOperationsSection {
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.batchOperationsEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  color: var(--editor-text-muted, #888);
+  font-size: 14px;
+}
+
+.batchOperations {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.batchOperationsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.batchOperationsHeader h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.batchOperationsCount {
+  font-size: 12px;
+  color: var(--editor-text-muted, #888);
+}
+
+.batchOperationsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.batchOperationButton {
+  padding: 12px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #ffffff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.batchOperationButton:hover:not(:disabled) {
+  background-color: var(--editor-panel-hover, #2a2a2a);
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.batchOperationButton.selected {
+  background-color: var(--editor-accent, #3b82f6);
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.batchOperationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.batchOperationsConfirm {
+  padding: 16px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 8px;
+}
+
+.batchOperationsDescription {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--editor-text-muted, #888);
+  line-height: 1.5;
+}
+
+.batchOperationsActions {
+  display: flex;
+  gap: 8px;
+}
+
+.batchOperationsConfirmButton,
+.batchOperationsCancelButton {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.batchOperationsConfirmButton {
+  background-color: var(--editor-accent, #3b82f6);
+  color: white;
+  border: none;
+}
+
+.batchOperationsConfirmButton:hover:not(:disabled) {
+  background-color: var(--editor-accent-hover, #2563eb);
+}
+
+.batchOperationsCancelButton {
+  background-color: transparent;
+  color: var(--editor-text, #ffffff);
+  border: 1px solid var(--editor-border, #333);
+}
+
+.batchOperationsCancelButton:hover:not(:disabled) {
+  background-color: var(--editor-panel-hover, #2a2a2a);
+}
+
+.batchOperationsConfirmButton:disabled,
+.batchOperationsCancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.batchOperationsProgress {
+  margin-top: 12px;
+}
+
+.progressBar {
+  height: 4px;
+  background-color: var(--editor-border, #333);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--editor-accent, #3b82f6);
+  animation: progress 1.5s ease-in-out infinite;
+}
+
+@keyframes progress {
+  0% {
+    width: 0%;
+    margin-left: 0%;
+  }
+  50% {
+    width: 50%;
+    margin-left: 25%;
+  }
+  100% {
+    width: 0%;
+    margin-left: 100%;
+  }
+}
+
+/* ==================== 高级功能 ==================== */
+
+.advancedSection {
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.advancedSectionHeader {
+  margin-bottom: 16px;
+}
+
+.advancedSectionHeader h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.advancedButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.advancedButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--editor-panel-bg, #1e1e1e);
+  color: var(--editor-text, #ffffff);
+  border: 1px solid var(--editor-border, #333);
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.advancedButton:hover:not(:disabled) {
+  background-color: var(--editor-panel-hover, #2a2a2a);
+  border-color: var(--editor-accent, #3b82f6);
+}
+
+.advancedButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.advancedButtonIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.advancedButtonText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.advancedButtonDescription {
+  font-size: 12px;
+  color: var(--editor-text-muted, #888);
+}
+
+/* ==================== 响应式设计 ==================== */
+
+@media (max-width: 768px) {
+  .batchOperationsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .advancedButtons {
+    gap: 8px;
+  }
+
+  .advancedButton {
+    padding: 12px;
+  }
+
+  .tabNavigation {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabButton {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}

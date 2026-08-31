@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>自动化测试报告</title>
+</head>
+<body>
+  <h1>FFmpeg 测试自动化报告</h1>
+  <div id="status">等待测试...</div>
+  <div id="logs"></div>
+  <div id="result"></div>
+
+  <script>
+    const logs = []
+    const statusEl = document.getElementById('status')
+    const logsEl = document.getElementById('logs')
+    const resultEl = document.getElementById('result')
+
+    // 拦截所有 console.log
+    const originalLog = console.log
+    console.log = function(...args) {
+      logs.push(args.join(' '))
+      originalLog.apply(console, args)
+    }
+
+    // 页面加载后自动运行测试
+    window.addEventListener('load', async () => {
+      statusEl.textContent = '正在运行测试...'
+
+      try {
+        // 导入 FFmpeg
+        const ffmpegModule = await import('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js')
+        const { FFmpeg } = ffmpegModule
+
+        // 创建实例
+        const ffmpeg = new FFmpeg()
+
+        // 加载
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm'
+
+        // 简化的 fetchFile 和 toBlobURL
+        const fetchFile = async (file) => {
+          if (typeof file === 'string') {
+            const data = await (await fetch(file)).arrayBuffer()
+            return new Uint8Array(data)
+          }
+          return new Uint8Array()
+        }
+
+        const toBlobURL = async (url, mimeType) => {
+          const buf = await (await fetch(url)).arrayBuffer()
+          const blob = new Blob([buf], { type: mimeType })
+          return URL.createObjectURL(blob)
+        }
+
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        })
+
+        ffmpeg.fetchFile = fetchFile
+
+        // 测试版本
+        const versionResult = await ffmpeg.exec(['-version'])
+        const version = versionResult.stdout.split('\n')[0]
+
+        statusEl.textContent = '✅ 测试成功！'
+        statusEl.style.color = '#10b981'
+
+        resultEl.innerHTML = `
+          <h2 style="color: #10b981">✅ FFmpeg 加载成功</h2>
+          <p><strong>版本:</strong> ${version}</p>
+          <p><strong>Worker 拦截:</strong> ${logs.filter(l => l.includes('拦截成功')).length} 次</p>
+        `
+
+        // 保存结果到 localStorage
+        localStorage.setItem('ffmpeg-test-result', JSON.stringify({
+          success: true,
+          timestamp: new Date().toISOString(),
+          logs: logs,
+          version: version
+        }))
+
+      } catch (error) {
+        statusEl.textContent = '❌ 测试失败'
+        statusEl.style.color = '#ef4444'
+
+        resultEl.innerHTML = `
+          <h2 style="color: #ef4444">❌ 测试失败</h2>
+          <p><strong>错误:</strong> ${error.message}</p>
+        `
+
+        logsEl.innerHTML = logs.map(l => `<div>${l}</div>`).join('')
+
+        localStorage.setItem('ffmpeg-test-result', JSON.stringify({
+          success: false,
+          timestamp: new Date().toISOString(),
+          error: error.message,
+          logs: logs
+        }))
+      }
+    })
+  </script>
+</body>
+</html>

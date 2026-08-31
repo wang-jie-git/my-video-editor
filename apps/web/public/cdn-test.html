@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>CDN 测试</title>
+</head>
+<body>
+	<h1>CDN 加载测试</h1>
+	<div id="status">测试中...</div>
+	<pre id="logs"></pre>
+
+	<script type="module">
+		const logs = document.getElementById('logs')
+		const status = document.getElementById('status')
+
+		function log(msg) {
+			console.log(msg)
+			logs.textContent += msg + '\n'
+		}
+
+		try {
+			log('1. 开始测试 jsdelivr...')
+			status.textContent = '测试 jsdelivr...'
+
+			const mod = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js')
+			log('✅ jsdelivr 加载成功！')
+			log('导出的内容:', Object.keys(mod))
+
+			status.textContent = '✅ 成功！'
+		} catch (err) {
+			log('❌ jsdelivr 加载失败:')
+			log('错误:', err.message)
+			log('错误类型:', err.constructor.name)
+			log('完整错误:', err)
+
+			status.textContent = '❌ 失败，查看日志'
+
+			// 尝试简单的 fetch 测试
+			try {
+				log('\n2. 测试 fetch...')
+				const resp = await fetch('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js')
+				log('fetch 状态:', resp.status)
+				log('fetch ok:', resp.ok)
+				log('headers:', Object.fromEntries(resp.headers))
+
+				const text = await resp.text()
+				log('内容前200字符:', text.substring(0, 200))
+			} catch (fetchErr) {
+				log('❌ fetch 也失败:', fetchErr.message)
+			}
+		}
+	</script>
+</body>
+</html>

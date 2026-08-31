@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta title>FFmpeg Blob 加载测试</title>
+	<style>
+		body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+		.success { color: #34d399; }
+		.error { color: #f87171; }
+		.info { color: #60a5fa; }
+		button { padding: 10px 20px; margin: 10px 5px; background: #667eea; color: white; border: none; cursor: pointer; }
+		button:disabled { background: #666; cursor: not-allowed; }
+		pre { background: #0a0a0a; padding: 15px; overflow-x: auto; }
+	</style>
+</head>
+<body>
+	<h1>FFmpeg Blob 加载测试</h1>
+
+	<div>
+		<button id="loadFFmpeg">加载 FFmpeg（Blob 方式）</button>
+		<button id="runTest" disabled>运行测试</button>
+	</div>
+
+	<div id="status" class="info">等待加载...</div>
+	<pre id="output"></pre>
+
+	<script>
+		const output = document.getElementById('output')
+		const status = document.getElementById('status')
+		const loadBtn = document.getElementById('loadFFmpeg')
+		const runBtn = document.getElementById('runTest')
+
+		function log(msg, type = 'info') {
+			const line = `<span class="${type}">${new Date().toLocaleTimeString()} ${msg}</span>\n`
+			output.innerHTML += line
+			console.log(msg)
+		}
+
+		async function loadScriptAsBlob(url) {
+			log(`⬇️  下载: ${url}`, 'info')
+			const resp = await fetch(url)
+			if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+			const text = await resp.text()
+			log(`✅ 下载成功 (${text.length} 字节)`, 'success')
+
+			// 创建 blob
+			const blob = new Blob([text], { type: 'application/javascript' })
+			const blobUrl = URL.createObjectURL(blob)
+			log(`✅ 创建 Blob URL: ${blobUrl}`, 'success')
+
+			return blobUrl
+		}
+
+		loadBtn.addEventListener('click', async () => {
+			loadBtn.disabled = true
+			output.innerHTML = ''
+
+			try {
+				// 加载 util 模块
+				log('⏳ 开始加载 FFmpeg Util...', 'info')
+				const utilBlobUrl = await loadScriptAsBlob('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js')
+
+				// 加载 ffmpeg 模块
+				log('⏳ 开始加载 FFmpeg...', 'info')
+				const ffmpegBlobUrl = await loadScriptAsBlob('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.1/dist/esm/classes.js')
+
+				// 动态加载脚本
+				log('⏳ 动态加载 FFmpeg 脚本...', 'info')
+
+				// 先加载 util
+				await new Promise((resolve, reject) => {
+					const script = document.createElement('script')
+					script.type = 'module'
+					script.src = utilBlobUrl
+					script.onload = resolve
+					script.onerror = () => reject(new Error('Util 加载失败'))
+					document.head.appendChild(script)
+				})
+				log('✅ FFmpeg Util 已加载', 'success')
+
+				// 再加载 FFmpeg
+				const ffmpegLoaded = await new Promise((resolve, reject) => {
+					const script = document.createElement('script')
+					script.type = 'module'
+					script.src = ffmpegBlobUrl
+					script.onload = resolve
+					script.onerror = () => reject(new Error('FFmpeg 加载失败'))
+					document.head.appendChild(script)
+				})
+				log('✅ FFmpeg 已加载', 'success')
+
+				// 等待一下让模块初始化
+				await new Promise(r => setTimeout(r, 500))
+
+				// 检查是否成功
+				log('⏳ 检查全局对象...', 'info')
+				log(`FFmpeg 对象: ${typeof window.FFmpeg}`, window.FFmpeg ? 'success' : 'error')
+				log(`fetchFile 对象: ${typeof window.fetchFile}`, window.fetchFile ? 'success' : 'error')
+
+				if (window.FFmpeg) {
+					status.innerHTML = '✅ FFmpeg 加载成功！'
+					status.className = 'success'
+					runBtn.disabled = false
+					loadBtn.textContent = '✅ 已加载'
+				} else {
+					throw new Error('FFmpeg 全局对象未找到')
+				}
+
+			} catch (err) {
+				log(`❌ 失败: ${err.message}`, 'error')
+				status.innerHTML = '❌ 加载失败'
+				status.className = 'error'
+				loadBtn.disabled = false
+			}
+		})
+
+		runBtn.addEventListener('click', async () => {
+			if (!window.FFmpeg) {
+				alert('请先加载 FFmpeg')
+				return
+			}
+
+			runBtn.disabled = true
+			log('⏳ 创建 FFmpeg 实例...', 'info')
+
+			try {
+				const ffmpeg = new window.FFmpeg()
+				log('✅ FFmpeg 实例创建成功', 'success')
+				log(`类型: ${ffmpeg.constructor.name}`, 'info')
+				log(`loaded 属性: ${ffmpeg.loaded}`, 'info')
+
+				status.innerHTML = '✅ 测试通过！'
+				status.className = 'success'
+			} catch (err) {
+				log(`❌ 失败: ${err.message}`, 'error')
+				runBtn.disabled = false
+			}
+		})
+	</script>
+</body>
+</html>

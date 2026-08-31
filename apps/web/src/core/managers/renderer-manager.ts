@@ -2,6 +2,8 @@ import type { EditorCore } from "@/core";
 import type { RootNode } from "@/services/renderer/nodes/root-node";
 import type { ExportOptions, ExportResult } from "@/types/export";
 import { SceneExporter } from "@/services/renderer/scene-exporter";
+import { FFmpegService } from "@/services/renderer/ffmpeg/ffmpeg-service";
+import { FFmpegExporter } from "@/services/renderer/ffmpeg-exporter";
 import { buildScene } from "@/services/renderer/scene-builder";
 import { createTimelineAudioBuffer } from "@/lib/media/audio";
 import { getSelectedVideoClip } from "@/lib/export";
@@ -10,8 +12,66 @@ import type { TimelineTrack } from "@/types/timeline";
 export class RendererManager {
 	private renderTree: RootNode | null = null;
 	private listeners = new Set<() => void>();
+	private sceneExporter: SceneExporter | null = null;
+	private ffmpegService: FFmpegService | null = null;
+	private ffmpegExporter: FFmpegExporter | null = null;
+	private useFFmpeg = false;
 
 	constructor(private editor: EditorCore) {}
+
+	/**
+	 * 切换到 FFmpeg 导出引擎
+	 * @param enabled 是否启用 FFmpeg
+	 * @param wasmPath FFmpeg.wasm 文件路径（相对 public/）- 暂未支持
+	 */
+	async enableFFmpegExport(enabled: boolean, _wasmPath?: string): Promise<void> {
+		this.useFFmpeg = enabled;
+
+		if (enabled) {
+			// 初始化 FFmpeg 服务
+			if (!this.ffmpegService) {
+				this.ffmpegService = new FFmpegService();
+			}
+
+			// 预加载 FFmpeg（可选）
+			if (this.ffmpegService) {
+				try {
+					await this.ffmpegService.load();
+				} catch (error) {
+					console.error('[RendererManager] FFmpeg 预加载失败:', error);
+					// 不抛出错误，延迟到导出时再加载
+				}
+			}
+
+			// 初始化 FFmpegExporter
+			if (this.ffmpegService && !this.ffmpegExporter) {
+				this.ffmpegExporter = new FFmpegExporter(this.ffmpegService);
+			}
+		} else {
+			// 切换回 SceneExporter
+			this.ffmpegService = null;
+			this.ffmpegExporter = null;
+		}
+	}
+
+	/**
+	 * 是否使用 FFmpeg 导出
+	 */
+	isUsingFFmpeg(): boolean {
+		return this.useFFmpeg;
+	}
+
+	/**
+	 * 获取 SceneExporter 实例
+	 */
+	getSceneExporter(): SceneExporter {
+		if (!this.sceneExporter) {
+			// SceneExporter 需要完整的导出参数，这里不能直接创建空实例
+			// 如果需要使用 SceneExporter，应该在 exportTracks 中创建
+			throw new Error('SceneExporter should be created in exportTracks with proper parameters');
+		}
+		return this.sceneExporter;
+	}
 
 	setRenderTree({ renderTree }: { renderTree: RootNode | null }): void {
 		this.renderTree = renderTree;
@@ -84,6 +144,19 @@ export class RendererManager {
 				return { success: false, error: emptyError };
 			}
 
+			// 如果启用 FFmpeg，使用 FFmpegExporter
+			if (this.useFFmpeg && this.ffmpegExporter) {
+				const canvasSize = activeProject.settings.canvasSize;
+
+				return this.ffmpegExporter.export({
+					tracks,
+					duration,
+					canvasSize,
+					options,
+				});
+			}
+
+			// 否则使用传统的 SceneExporter
 			const exportFps = fps || activeProject.settings.fps;
 			const canvasSize = activeProject.settings.canvasSize;
 

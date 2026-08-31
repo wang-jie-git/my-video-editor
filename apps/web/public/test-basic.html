@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>基础功能测试</title>
+</head>
+<body>
+  <h1>基础功能测试</h1>
+  <button id="testBtn" onclick="runTest()">点击测试</button>
+  <div id="output"></div>
+
+  <script>
+    // 测试 1: 基本函数定义
+    console.log('[1] 脚本开始执行')
+    document.getElementById('output').innerHTML += '<p>✅ 脚本执行成功</p>'
+
+    // 测试 2: onclick 绑定
+    window.runTest = function() {
+      console.log('[2] runTest 被调用')
+      document.getElementById('output').innerHTML += '<p>✅ 按钮点击成功</p>'
+      alert('按钮点击成功！')
+    }
+
+    console.log('[3] runTest 函数已定义:', typeof window.runTest)
+  </script>
+</body>
+</html>

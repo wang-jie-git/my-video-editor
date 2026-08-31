@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FFmpeg.wasm 独立测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      padding: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #3b82f6; }
+    button {
+      background: #10b981;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 8px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .log {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: Monaco, "Courier New", monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin: 16px 0;
+    }
+    .log div { margin: 4px 0; }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .info { color: #60a5fa; }
+    .result {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Monaco, "Courier New", monospace;
+      font-size: 13px;
+      color: #d1d5db;
+    }
+    .notice {
+      background: #f59e0b22;
+      border-left: 4px solid #f59e0b;
+      padding: 12px;
+      margin-bottom: 16px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    // 🔧 终极方案：使用 Object.defineProperty 冻结 Worker 构造函数
+    console.log('[终极方案] ========== 开始 ==========')
+
+    try {
+      // 在第 1 步：使用 Object.defineProperty 包装 Worker
+      // 这样即使 FFmpeg 在 import 时缓存了 Worker，也会使用我们的版本
+
+      // 创建自定义 Worker 代码
+      const customWorkerCode = `
+        self.onmessage = function(event) {
+          console.log('[CustomWorker] 收到消息:', event.data)
+          if (event.data && event.data.type) {
+            self.postMessage({ type: 'message', received: event.data })
+          }
+        }
+        console.log('[CustomWorker] Worker 已加载（终极方案）')
+      `
+
+      const blob = new Blob([customWorkerCode], { type: 'application/javascript' })
+      const blobURL = URL.createObjectURL(blob)
+
+      console.log('[终极方案] Blob URL 已创建:', blobURL)
+
+      // 保存原始 Worker
+      const OriginalWorker = globalThis.Worker
+
+      // 创建拦截器工厂函数
+      function createWorkerInterceptor() {
+        let callCount = 0
+
+        return function WorkerInterceptor(url, options) {
+          callCount++
+          console.log('[终极方案] Worker 调用 #' + callCount + ':', url)
+
+          // 如果是 worker.js，拦截
+          if (typeof url === 'string' && url.includes('worker.js')) {
+            console.log('[终极方案] ✓✓✓ 拦截成功！使用 Blob URL')
+            console.log('[终极方案] 调用栈:', new Error().stack)
+            return new OriginalWorker(blobURL, options)
+          }
+
+          // 否则使用原始 Worker
+          return new OriginalWorker(url, options)
+        }
+      }
+
+      // 设置 Worker 构造函数
+      const InterceptedWorker = createWorkerInterceptor()
+      Object.defineProperty(globalThis, 'Worker', {
+        value: InterceptedWorker,
+        writable: true,
+        configurable: true
+      })
+
+      // 设置原型
+      InterceptedWorker.prototype = OriginalWorker.prototype
+
+      console.log('[终极方案] ✓ Worker 已通过 Object.defineProperty 替换')
+      console.log('[终极方案] Worker 类型:', typeof globalThis.Worker)
+      console.log('[终极方案] ========== 结束 ==========')
+
+      // 测试
+      setTimeout(function() {
+        try {
+          console.log('[终极方案] 自动测试...')
+          const testWorker = new Worker('http://cdn.example.com/worker.js')
+          console.log('[终极方案] ✓ 测试通过！')
+        } catch(e) {
+          console.error('[终极方案] ✗ 测试失败:', e)
+        }
+      }, 500)
+
+    } catch(err) {
+      console.error('[终极方案] ✗ 严重错误:', err)
+    }
+  </script>
+
+  <div class="notice" id="notice">
+    ⚠️ <strong>注意</strong>: 这个页面是完整的独立 HTML，不经过 Next.js 构建
+  </div>
+
+  <div>
+    <button id="testBtn" onclick="runAllTests()">运行所有测试</button>
+    <button onclick="clearLogs()">清除日志</button>
+  </div>
+
+  <div id="log" class="log"></div>
+  <div id="result"></div>
+
+  <script type="module">
+    // 检查 Worker 是否已被拦截
+    console.log('[Module] Worker 状态:', globalThis.Worker.toString().substring(0, 100))
+
+    // FFmpeg util 函数（内联以避免 CDN 问题）
+    const ERROR_RESPONSE_BODY_READER = new Error("failed to get response body reader")
+    const ERROR_INCOMPLETED_DOWNLOAD = new Error("failed to complete download")
+    const HeaderContentLength = "Content-Length"
+
+    const fetchFile = async (file) => {
+      let data
+      if (typeof file === "string") {
+        if (/data:_data\/([a-zA-Z]*);base64,([^"]*)/.test(file)) {
+          data = atob(file.split(",")[1]).split("").map((c) => c.charCodeAt(0))
+        } else {
+          data = await (await fetch(file)).arrayBuffer()
+        }
+      } else if (file instanceof URL) {
+        data = await (await fetch(file)).arrayBuffer()
+      } else if (file instanceof File || file instanceof Blob) {
+        const fileReader = new FileReader()
+        data = await new Promise((resolve, reject) => {
+          fileReader.onload = () => resolve(new Uint8Array(fileReader.result))
+          fileReader.onerror = reject
+          fileReader.readAsArrayBuffer(file)
+        })
+      } else {
+        return new Uint8Array()
+      }
+      return new Uint8Array(data)
+    }
+
+    const toBlobURL = async (url, mimeType) => {
+      const buf = await (await fetch(url)).arrayBuffer()
+      const blob = new Blob([buf], { type: mimeType })
+      return URL.createObjectURL(blob)
+    }
+
+    let ffmpeg = null
+
+    // worker 模式下 exec() 只返回 exitCode，stdout/stderr 通过 log 回调流式输出，这里做模块级收集
+    let currentCapture = null
+    const execCapture = async (args) => {
+      currentCapture = { stdout: '', stderr: '' }
+      const exitCode = await ffmpeg.exec(args)
+      const captured = { exitCode, ...currentCapture }
+      currentCapture = null
+      return captured
+    }
+
+    const log = (msg, type = 'info') => {
+      const time = new Date().toLocaleTimeString()
+      const colors = { success: '#10b981', error: '#ef4444', info: '#60a5fa', warning: '#f59e0b' }
+      const div = document.createElement('div')
+      div.innerHTML = `<span style="color: ${colors[type] || colors.info}">[${time}] ${msg}</span>`
+      document.getElementById('log').appendChild(div)
+      // 同时输出到控制台
+      console.log('[页面日志]', msg)
+    }
+
+    window.clearLogs = () => {
+      document.getElementById('log').innerHTML = ''
+    }
+
+    async function loadFFmpeg() {
+      log('开始加载 FFmpeg.wasm...', 'info')
+
+      // 🔍 调试：检查 Service Worker 状态
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration()
+        console.log('[调试] Service Worker 状态:', registration ? '已注册 ✓' : '未注册 ✗')
+        if (registration) {
+          console.log('[调试] Service Worker 范围:', registration.scope)
+          console.log('[调试] Service Worker 激活:', registration.active ? '是' : '否')
+        }
+      } else {
+        console.warn('[调试] Service Worker 不支持')
+      }
+
+      try {
+        log('导入 @ffmpeg/ffmpeg@0.12.15 (本地)...')
+        const ffmpegModule = await import('/ffmpeg/index.js')
+        log(`✅ FFmpeg 模块加载成功: ${Object.keys(ffmpegModule).join(', ')}`, 'success')
+
+        const { FFmpeg } = ffmpegModule
+
+        log('创建 FFmpeg 实例...')
+        console.log('[调试] 创建 FFmpeg 前，Worker 状态:', globalThis.Worker.toString().substring(0, 100))
+        ffmpeg = new FFmpeg({ useWorker: false })
+        console.log('[调试] 创建 FFmpeg 后，检查 Worker 调用次数')
+        log('✅ FFmpeg 实例创建成功', 'success')
+
+        // stdout/stderr 收集器（worker 模式下 exec 只返回 exitCode，输出走 log 回调）
+        ffmpeg.on('log', ({ type, message }) => {
+          if (currentCapture) {
+            if (type === 'stdout') currentCapture.stdout += message + '\n'
+            else if (type === 'stderr') currentCapture.stderr += message + '\n'
+          }
+          log(`[FFmpeg] ${message}`)
+        })
+
+        ffmpeg.on('progress', ({ progress }) => {
+          log(`进度: ${(progress * 100).toFixed(2)}%`)
+        })
+
+        const baseURL = '/ffmpeg-core'
+        log('加载核心文件...')
+
+        const loadPromise = ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        })
+
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('加载超时（60秒）')), 60000)
+        })
+
+        await Promise.race([loadPromise, timeoutPromise])
+
+        ffmpeg.fetchFile = fetchFile
+        log('✅ FFmpeg 加载完成！', 'success')
+        return true
+      } catch (error) {
+        log(`❌ 加载失败: ${error.message}`, 'error')
+        console.error('详细错误:', error)
+        console.error('错误堆栈:', error.stack)
+        if (error instanceof Error) {
+          console.error('错误名称:', error.name)
+          console.error('错误原因:', error.cause)
+        }
+        return false
+      }
+    }
+
+    async function testVersion() {
+      log('测试: 版本信息')
+      const result = await execCapture(['-version'])
+      return { version: result.stdout.split('\n')[0], exitCode: result.exitCode }
+    }
+
+    async function testFormats() {
+      log('测试: 支持的格式')
+      const result = await execCapture(['-formats'])
+      const formats = result.stdout.split('\n')
+        .filter(l => l.includes('E') && (l.includes('mp4') || l.includes('mov') || l.includes('avi')))
+        .slice(0, 10)
+        .map(l => l.trim())
+      return { formats, total: result.stdout.split('\n').length }
+    }
+
+    async function testCodecs() {
+      log('测试: 编解码器')
+      const result = await execCapture(['-codecs'])
+      const codecs = result.stdout.split('\n')
+        .filter(l => l.includes('E') && (l.includes('h264') || l.includes('vp9') || l.includes('av1')))
+        .slice(0, 10)
+        .map(l => l.trim())
+      return { codecs }
+    }
+
+    async function testFilters() {
+      log('测试: 可用滤镜')
+      const result = await execCapture(['-filters'])
+      const filters = result.stdout.split('\n')
+        .filter(l => l.includes('V') && (l.includes('eq') || l.includes('blur') || l.includes('unsharp') || l.includes('lut3d')))
+        .slice(0, 15)
+        .map(l => l.trim())
+      return { filters }
+    }
+
+    async function testFileIO() {
+      log('测试: 文件读写')
+      const filename = `test-${Date.now()}.txt`
+      const content = new TextEncoder().encode('Hello FFmpeg.wasm!')
+
+      await ffmpeg.writeFile(filename, content)
+      const data = await ffmpeg.readFile(filename)
+      const text = new TextDecoder().decode(data)
+      await ffmpeg.deleteFile(filename)
+
+      return { write: 'Hello FFmpeg.wasm!', read: text, match: text === 'Hello FFmpeg.wasm!' }
+    }
+
+    async function testVideoGeneration() {
+      log('测试: 视频生成')
+      const filename = `test-${Date.now()}.mp4`
+
+      await ffmpeg.exec(['-f', 'lavfi', '-i', 'testsrc=duration=1:size=320x240:rate=1', '-y', filename])
+
+      const files = await ffmpeg.listDir('.')
+      await ffmpeg.deleteFile(filename)
+
+      return { filename, size: files.find(f => f.name === filename)?.size || 0 }
+    }
+
+    window.runAllTests = async function() {
+      const btn = document.getElementById('testBtn')
+      btn.disabled = true
+      document.getElementById('result').innerHTML = ''
+
+      try {
+        const loaded = await loadFFmpeg()
+        if (!loaded) throw new Error('FFmpeg 加载失败')
+
+        const results = {}
+        const tests = [
+          { key: 'version', fn: testVersion },
+          { key: 'formats', fn: testFormats },
+          { key: 'codecs', fn: testCodecs },
+          { key: 'filters', fn: testFilters },
+          { key: 'file-io', fn: testFileIO },
+          { key: 'video', fn: testVideoGeneration }
+        ]
+
+        for (const test of tests) {
+          try {
+            results[test.key] = await test.fn()
+            log(`✅ ${test.key} 测试通过`, 'success')
+          } catch (e) {
+            results[test.key] = { error: e.message }
+            log(`❌ ${test.key} 测试失败: ${e.message}`, 'error')
+          }
+        }
+
+        const values = Object.values(results)
+        const passed = values.filter(r => !r.error).length
+        const total = values.length
+
+        const html = `
+          <div class="result">
+            <h3 style="color: ${passed === total ? '#10b981' : '#f59e0b'}">
+              测试汇总: ${passed}/${total} 通过 (${((passed/total)*100).toFixed(1)}%)
+            </h3>
+            ${Object.entries(results).map(([key, value]) => {
+              const success = !value.error
+              return `
+                <div style="background: #0a0a0a; border-left: 4px solid ${success ? '#10b981' : '#ef4444'}; padding: 12px; margin: 8px 0; border-radius: 4px;">
+                  <h4 style="color: ${success ? '#10b981' : '#ef4444'}; margin: 0 0 8px 0;">
+                    ${success ? '✅' : '❌'} ${key}
+                  </h4>
+                  <pre>${JSON.stringify(value, null, 2)}</pre>
+                </div>
+              `
+            }).join('')}
+          </div>
+        `
+
+        document.getElementById('result').innerHTML = html
+        log(`✅ 所有测试完成: ${passed}/${total} 通过`, 'success')
+      } catch (error) {
+        log(`❌ 测试失败: ${error.message}`, 'error')
+      } finally {
+        btn.disabled = false
+      }
+    }
+  </script>
+</body>
+</html>

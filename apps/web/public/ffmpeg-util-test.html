@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>FFmpeg Util 导出测试</title>
+	<style>
+		body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+		.success { color: #34d399; }
+		.error { color: #f87171; }
+		.info { color: #60a5fa; }
+		pre { background: #0a0a0a; padding: 15px; margin: 10px 0; max-height: 400px; overflow-y: auto; }
+		button { padding: 10px 20px; margin: 5px; background: #667eea; color: white; border: none; cursor: pointer; }
+		button:disabled { background: #666; cursor: not-allowed; }
+		#status { margin: 20px 0; font-size: 18px; }
+	</style>
+</head>
+<body>
+	<h1>FFmpeg Util 导出测试</h1>
+	<div id="status" class="info">⏳ 等待加载...</div>
+	<button id="loadBtn">加载 Util</button>
+	<button id="testBtn" disabled>测试函数</button>
+	<pre id="log"></pre>
+
+	<script>
+		const logEl = document.getElementById('log')
+		const statusEl = document.getElementById('status')
+		const loadBtn = document.getElementById('loadBtn')
+		const testBtn = document.getElementById('testBtn')
+
+		function log(msg, type = 'info') {
+			const line = `[${new Date().toLocaleTimeString()}] ${msg}`
+			logEl.innerHTML += `<div class="${type}">${line}</div>`
+			console.log(msg)
+		}
+
+		loadBtn.addEventListener('click', async () => {
+			logEl.textContent = ''
+			log('开始加载...')
+
+			try {
+				// 使用 import() 导入模块
+				const module = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js')
+
+				log('✅ 导入成功', 'success')
+				log(`模块类型: ${typeof module}`, 'info')
+
+				// 检查所有导出
+				const exports = Object.keys(module)
+				log(`导出的内容: ${exports.join(', ')}`, 'info')
+
+				// 保存到全局
+				window.FFmpegUtil = module
+				log('✅ 保存到 window.FFmpegUtil', 'success')
+
+				// 验证导出
+				log(`\n验证导出:`, 'info')
+				log(`- fetchFile: ${typeof module.fetchFile}`, module.fetchFile ? 'success' : 'error')
+				log(`- toBlobURL: ${typeof module.toBlobURL}`, module.toBlobURL ? 'success' : 'error')
+				log(`- importScript: ${typeof module.importScript}`, module.importScript ? 'success' : 'error')
+				log(`- downloadWithProgress: ${typeof module.downloadWithProgress}`, module.downloadWithProgress ? 'success' : 'error')
+
+				if (module.fetchFile && module.toBlobURL) {
+					statusEl.textContent = '✅ FFmpeg Util 加载成功！'
+					statusEl.className = 'success'
+					testBtn.disabled = false
+				} else {
+					throw new Error('缺少必要的导出')
+				}
+
+			} catch (err) {
+				log(`❌ 失败: ${err.message}`, 'error')
+				log(`错误类型: ${err.constructor.name}`, 'error')
+				statusEl.textContent = '❌ 加载失败'
+				statusEl.className = 'error'
+			}
+		})
+
+		testBtn.addEventListener('click', async () => {
+			log('\n开始测试 util 函数...', 'info')
+
+			try {
+				const { fetchFile, toBlobURL } = window.FFmpegUtil
+
+				// 测试 toBlobURL
+				log('⏳ 测试 toBlobURL...', 'info')
+				const blobUrl = await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.1/dist/esm/ffmpeg-core.wasm', 'application/wasm')
+				log(`✅ toBlobURL 成功: ${blobUrl}`, 'success')
+
+				// 测试 fetchFile
+				log('⏳ 测试 fetchFile...', 'info')
+				const data = await fetchFile('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.1/dist/esm/ffmpeg-core.js')
+				log(`✅ fetchFile 成功: ${data.length} 字节`, 'success')
+
+				log('\n🎉 所有 util 函数测试通过！', 'success')
+
+				// 现在加载 FFmpeg
+				log('\n⏳ 开始加载 FFmpeg...', 'info')
+				const ffmpegModule = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.1/dist/esm/classes.js')
+				log('✅ FFmpeg classes 加载成功', 'success')
+
+				const { FFmpeg } = ffmpegModule
+				log(`FFmpeg 类: ${typeof FFmpeg}`, 'info')
+
+				// 创建实例
+				const ffmpeg = new FFmpeg()
+				log(`✅ FFmpeg 实例创建成功！`, 'success')
+				log(`类型: ${ffmpeg.constructor.name}`, 'info')
+				log(`loaded: ${ffmpeg.loaded}`, 'info')
+
+				log('\n🎉 所有测试通过！', 'success')
+				statusEl.textContent = '🎉 完全成功！'
+				statusEl.className = 'success'
+
+				// 保存到全局
+				window.FFmpeg = FFmpeg
+
+			} catch (err) {
+				log(`❌ 测试失败: ${err.message}`, 'error')
+				log(`错误类型: ${err.constructor.name}`, 'error')
+			}
+		})
+	</script>
+</body>
+</html>

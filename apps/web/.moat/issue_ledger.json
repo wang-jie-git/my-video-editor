@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "created_at": "2026-08-31T21:18:53.172341",
+    "updated_at": "2026-08-31T21:18:53.234526",
+    "project": "/Users/mac/Desktop/cutia/apps/web",
+    "total_issues": 0,
+    "stats": {
+      "total": 0,
+      "by_status": {},
+      "by_severity": {},
+      "by_fix_status": {}
+    },
+    "baseline": {
+      "commit": "f4525a0",
+      "branch": "main",
+      "timestamp": "2026-08-31T21:18:53.234069",
+      "tool_version": "1.7.20",
+      "coverage": [
+        "语法检查",
+        "启动链",
+        "API 测试",
+        "依赖安全性",
+        "版本兼容性"
+      ],
+      "project_type": "python, typescript"
+    }
+  },
+  "issues": []
+}

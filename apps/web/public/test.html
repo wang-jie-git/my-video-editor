@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FFmpeg.wasm 独立测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      padding: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #3b82f6; }
+    button {
+      background: #10b981;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 8px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .log {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: Monaco, "Courier New", monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin: 16px 0;
+    }
+    .log div { margin: 4px 0; }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .info { color: #60a5fa; }
+    .result {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Monaco, "Courier New", monospace;
+      font-size: 13px;
+      color: #d1d5db;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎬 FFmpeg.wasm 独立测试</h1>
+  <p>完全绕过 Next.js，直接在浏览器中测试</p>
+
+  <div>
+    <button id="testBtn" onclick="runAllTests()">运行所有测试</button>
+    <button onclick="clearLogs()">清除日志</button>
+  </div>
+
+  <div id="log" class="log"></div>
+  <div id="result"></div>
+
+  <script type="module">
+    // 动态导入 FFmpeg.wasm
+    let ffmpeg = null
+    let fetchFile = null
+    let toBlobURL = null
+
+    const log = (msg, type = 'info') => {
+      const time = new Date().toLocaleTimeString()
+      const colors = { success: '#10b981', error: '#ef4444', info: '#60a5fa' }
+      const div = document.createElement('div')
+      div.innerHTML = `<span style="color: ${colors[type]}">[${time}] ${msg}</span>`
+      document.getElementById('log').appendChild(div)
+    }
+
+    window.clearLogs = () => {
+      document.getElementById('log').innerHTML = ''
+    }
+
+    async function loadFFmpeg() {
+      log('开始加载 FFmpeg.wasm...')
+
+      try {
+        // 动态导入
+        log('导入 @ffmpeg/ffmpeg...')
+        const ffmpegModule = await import('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/ffmpeg.js')
+
+        log('导入 @ffmpeg/util...')
+        const utilModule = await import('https://unpkg.com/@ffmpeg/util@0.12.10/dist/esm/util.js')
+
+        const { FFmpeg } = ffmpegModule
+        fetchFile = utilModule.fetchFile
+        toBlobURL = utilModule.toBlobURL
+
+        log('创建 FFmpeg 实例...')
+        ffmpeg = new FFmpeg()
+
+        ffmpeg.on('log', ({ message }) => {
+          log(`[FFmpeg] ${message}`, 'info')
+        })
+
+        ffmpeg.on('progress', ({ progress }) => {
+          log(`进度: ${(progress * 100).toFixed(2)}%`, 'info')
+        })
+
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm'
+        log('加载核心文件...')
+
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        })
+
+        ffmpeg.fetchFile = fetchFile
+        log('✅ FFmpeg 加载完成！', 'success')
+        return true
+      } catch (error) {
+        log(`❌ 加载失败: ${error.message}`, 'error')
+        console.error(error)
+        return false
+      }
+    }
+
+    async function testVersion() {
+      log('测试: 版本信息')
+      const result = await ffmpeg.exec(['-version'])
+      const version = result.stdout.split('\n')[0]
+      return { version, exitCode: result.exitCode }
+    }
+
+    async function testFormats() {
+      log('测试: 支持的格式')
+      const result = await ffmpeg.exec(['-formats'])
+      const lines = result.stdout.split('\n')
+      const formats = lines
+        .filter(line => line.includes('E') && (line.includes('mp4') || line.includes('mov') || line.includes('avi')))
+        .slice(0, 10)
+        .map(line => line.trim())
+      return { formats }
+    }
+
+    async function testCodecs() {
+      log('测试: 编解码器')
+      const result = await ffmpeg.exec(['-codecs'])
+      const lines = result.stdout.split('\n')
+      const codecs = lines
+        .filter(line => line.includes('E') && (line.includes('h264') || line.includes('vp9')))
+        .slice(0, 10)
+        .map(line => line.trim())
+      return { codecs }
+    }
+
+    async function testFilters() {
+      log('测试: 可用滤镜')
+      const result = await ffmpeg.exec(['-filters'])
+      const lines = result.stdout.split('\n')
+      const filters = lines
+        .filter(line => line.includes('V') && (line.includes('eq') || line.includes('blur') || line.includes('unsharp')))
+        .slice(0, 15)
+        .map(line => line.trim())
+      return { filters }
+    }
+
+    async function testFileIO() {
+      log('测试: 文件读写')
+      const filename = `test-${Date.now()}.txt`
+      const content = new TextEncoder().encode('Hello FFmpeg.wasm!')
+
+      await ffmpeg.writeFile(filename, content)
+      const data = await ffmpeg.readFile(filename)
+      const text = new TextDecoder().decode(data)
+      await ffmpeg.deleteFile(filename)
+
+      return { write: 'Hello FFmpeg.wasm!', read: text, match: text === 'Hello FFmpeg.wasm!' }
+    }
+
+    async function testVideoGeneration() {
+      log('测试: 视频生成')
+      const filename = `test-${Date.now()}.mp4`
+
+      await ffmpeg.exec([
+        '-f', 'lavfi',
+        '-i', 'testsrc=duration=1:size=320x240:rate=1',
+        '-y', filename
+      ])
+
+      const files = await ffmpeg.listDir('.')
+      await ffmpeg.deleteFile(filename)
+
+      return { filename, size: files.find(f => f.name === filename)?.size || 0 }
+    }
+
+    window.runAllTests = async function() {
+      const btn = document.getElementById('testBtn')
+      btn.disabled = true
+      document.getElementById('result').innerHTML = ''
+
+      try {
+        // 加载 FFmpeg
+        const loaded = await loadFFmpeg()
+        if (!loaded) {
+          throw new Error('FFmpeg 加载失败')
+        }
+
+        // 运行测试
+        const results = {}
+
+        try { results.version = await testVersion() } catch (e) { results.version = { error: e.message } }
+        try { results.formats = await testFormats() } catch (e) { results.formats = { error: e.message } }
+        try { results.codecs = await testCodecs() } catch (e) { results.codecs = { error: e.message } }
+        try { results.filters = await testFilters() } catch (e) { results.filters = { error: e.message } }
+        try { results['file-io'] = await testFileIO() } catch (e) { results['file-io'] = { error: e.message } }
+        try { results['video'] = await testVideoGeneration() } catch (e) { results.video = { error: e.message } }
+
+        // 统计
+        const values = Object.values(results)
+        const passed = values.filter(r => !r.error).length
+        const total = values.length
+
+        const html = `
+          <div class="result">
+            <h3 style="color: ${passed === total ? '#10b981' : '#f59e0b'}">
+              测试汇总: ${passed}/${total} 通过
+            </h3>
+            ${Object.entries(results).map(([key, value]) => {
+              const success = !value.error
+              return `
+                <div style="background: #0a0a0a; border-left: 4px solid ${success ? '#10b981' : '#ef4444'}; padding: 12px; margin: 8px 0; border-radius: 4px;">
+                  <h4 style="color: ${success ? '#10b981' : '#ef4444'}; margin: 0 0 8px 0;">
+                    ${success ? '✅' : '❌'} ${key}
+                  </h4>
+                  <pre>${JSON.stringify(value, null, 2)}</pre>
+                </div>
+              `
+            }).join('')}
+          </div>
+        `
+
+        document.getElementById('result').innerHTML = html
+      } catch (error) {
+        log(`测试失败: ${error.message}`, 'error')
+      } finally {
+        btn.disabled = false
+      }
+    }
+  </script>
+</body>
+</html>

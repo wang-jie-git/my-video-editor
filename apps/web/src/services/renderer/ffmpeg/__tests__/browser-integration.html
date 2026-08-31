@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FFmpeg.wasm Phase 1 - 浏览器集成测试</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 40px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #fff;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+
+    .status.loading {
+      background: #f59e0b;
+      color: #000;
+    }
+
+    .status.success {
+      background: #10b981;
+      color: #000;
+    }
+
+    .status.error {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .test-section {
+      background: #2a2a2a;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .test-section h2 {
+      font-size: 1.25rem;
+      margin-bottom: 15px;
+      color: #3b82f6;
+    }
+
+    .test-result {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      background: #1a1a1a;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .test-result.success {
+      border-left: 4px solid #10b981;
+    }
+
+    .test-result.error {
+      border-left: 4px solid #ef4444;
+    }
+
+    .test-result.info {
+      border-left: 4px solid #3b82f6;
+    }
+
+    .button {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .button:hover {
+      background: #2563eb;
+    }
+
+    .button:disabled {
+      background: #6b7280;
+      cursor: not-allowed;
+    }
+
+    .progress {
+      margin-top: 20px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      height: 30px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      width: 0%;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .log {
+      margin-top: 20px;
+      padding: 15px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #333;
+    }
+
+    .log-entry.info {
+      color: #60a5fa;
+    }
+
+    .log-entry.success {
+      color: #34d399;
+    }
+
+    .log-entry.error {
+      color: #f87171;
+    }
+
+    .log-entry.warning {
+      color: #fbbf24;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      🎬 FFmpeg.wasm Phase 1 集成测试
+      <span class="status loading" id="status">准备中</span>
+    </h1>
+
+    <div class="test-section">
+      <h2>测试概览</h2>
+      <p>此测试验证 FFmpeg.wasm 的基础功能，包括：</p>
+      <ul style="margin-top: 10px; margin-left: 20px;">
+        <li>FFmpeg 加载</li>
+        <li>版本信息获取</li>
+        <li>支持的格式列表</li>
+        <li>支持的编解码器列表</li>
+        <li>可用的滤镜列表</li>
+        <li>文件读写操作</li>
+        <li>视频转换测试</li>
+      </ul>
+
+      <button class="button" id="startBtn">开始测试</button>
+
+      <div class="progress" id="progress" style="display: none;">
+        <div class="progress-bar" id="progressBar">0%</div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>测试结果</h2>
+      <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>日志输出</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // 动态导入 FFmpegService
+    const { FFmpegService } = await import('./ffmpeg-service.ts')
+
+    const statusEl = document.getElementById('status')
+    const resultsEl = document.getElementById('results')
+    const logEl = document.getElementById('log')
+    const startBtn = document.getElementById('startBtn')
+    const progressEl = document.getElementById('progress')
+    const progressBar = document.getElementById('progressBar')
+
+    let currentTest = 0
+    const totalTests = 7
+
+    function log(message, type = 'info') {
+      const entry = document.createElement('div')
+      entry.className = `log-entry ${type}`
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`
+      logEl.appendChild(entry)
+      logEl.scrollTop = logEl.scrollHeight
+    }
+
+    function addResult(title, content, type = 'info') {
+      const result = document.createElement('div')
+      result.className = `test-result ${type}`
+      result.innerHTML = `<strong>${title}</strong>\n${content}`
+      resultsEl.appendChild(result)
+    }
+
+    function updateProgress(percent) {
+      progressBar.style.width = `${percent}%`
+      progressBar.textContent = `${Math.round(percent)}%`
+    }
+
+    function setStatus(status, type) {
+      statusEl.textContent = status
+      statusEl.className = `status ${type}`
+    }
+
+    async function runTests() {
+      startBtn.disabled = true
+      resultsEl.innerHTML = ''
+      logEl.innerHTML = ''
+      progressEl.style.display = 'block'
+
+      const service = new FFmpegService({
+        logLevel: 'debug',
+      })
+
+      try {
+        // 测试 1: 加载 FFmpeg
+        currentTest = 1
+        updateProgress((currentTest / totalTests) * 100)
+        log('1️⃣  开始加载 FFmpeg...', 'info')
+        setStatus('加载中...', 'loading')
+
+        await service.load()
+
+        log('✅ FFmpeg 加载成功', 'success')
+        addResult('1. FFmpeg 加载', '✅ 成功', 'success')
+
+        // 测试 2: 版本信息
+        currentTest = 2
+        updateProgress((currentTest / totalTests) * 100)
+        log('2️⃣  获取版本信息...', 'info')
+
+        const versionResult = await service.exec(['-version'])
+        const versionInfo = versionResult.stdout.split('\n')[0]
+
+        log(`✅ 版本: ${versionInfo}`, 'success')
+        addResult('2. 版本信息', versionInfo, 'success')
+
+        // 测试 3: 支持的格式
+        currentTest = 3
+        updateProgress((currentTest / totalTests) * 100)
+        log('3️⃣  获取支持的格式...', 'info')
+
+        const formatsResult = await service.exec(['-formats'])
+        const formats = formatsResult.stdout
+          .split('\n')
+          .filter((line) => line.includes('E') && (line.includes('mp4') || line.includes('mov')))
+          .slice(0, 5)
+          .join('\n')
+
+        log('✅ 支持的格式获取成功', 'success')
+        addResult('3. 支持的格式', formats || '请查看完整输出', 'success')
+
+        // 测试 4: 支持的编解码器
+        currentTest = 4
+        updateProgress((currentTest / totalTests) * 100)
+        log('4️⃣  获取支持的编解码器...', 'info')
+
+        const codecsResult = await service.exec(['-codecs'])
+        const videoCodecs = codecsResult.stdout
+          .split('\n')
+          .filter((line) => line.includes('E') && (line.includes('h264') || line.includes('vp9')))
+          .slice(0, 5)
+          .join('\n')
+
+        log('✅ 编解码器列表获取成功', 'success')
+        addResult('4. 视频编解码器', videoCodecs || '请查看完整输出', 'success')
+
+        // 测试 5: 可用的滤镜
+        currentTest = 5
+        updateProgress((currentTest / totalTests) * 100)
+        log('5️⃣  获取可用的滤镜...', 'info')
+
+        const filtersResult = await service.exec(['-filters'])
+        const videoFilters = filtersResult.stdout
+          .split('\n')
+          .filter((line) => line.includes('V') && (line.includes('eq') || line.includes('blur') || line.includes('unsharp')))
+          .slice(0, 10)
+          .join('\n')
+
+        log('✅ 滤镜列表获取成功', 'success')
+        addResult('5. 视频滤镜', videoFilters || '请查看完整输出', 'success')
+
+        // 测试 6: 文件读写
+        currentTest = 6
+        updateProgress((currentTest / totalTests) * 100)
+        log('6️⃣  测试文件读写...', 'info')
+
+        const testFileName = 'test.txt'
+        const testContent = new TextEncoder().encode('Hello FFmpeg.wasm!')
+
+        await service.writeFile(testFileName, testContent)
+        const readContent = await service.readFile(testFileName)
+        const decodedContent = new TextDecoder().decode(readContent)
+
+        console.assert(decodedContent === 'Hello FFmpeg.wasm!', '内容不匹配')
+
+        log('✅ 文件读写测试成功', 'success')
+        addResult('6. 文件读写', `写入: "Hello FFmpeg.wasm!"\n读取: "${decodedContent}"`, 'success')
+
+        // 测试 7: 生成测试视频
+        currentTest = 7
+        updateProgress((currentTest / totalTests) * 100)
+        log('7️⃣  生成测试视频...', 'info')
+
+        await service.exec([
+          '-f',
+          'lavfi',
+          '-i',
+          'testsrc=duration=2:size=640x480:rate=30',
+          '-y',
+          'test-video.mp4',
+        ])
+
+        log('✅ 测试视频生成成功', 'success')
+        addResult('7. 视频生成', '✅ 生成 test-video.mp4 (640x480, 2s, 30fps)', 'success')
+
+        // 清理
+        await service.deleteFile(testFileName)
+        await service.deleteFile('test-video.mp4')
+        log('🧹 清理完成', 'info')
+
+        // 完成
+        updateProgress(100)
+        setStatus('✅ 完成', 'success')
+        log('=== 所有测试通过 ✅ ===', 'success')
+        addResult('总结', '🎉 所有测试通过！Phase 1 基础功能验证成功。', 'success')
+      } catch (error) {
+        console.error('测试失败:', error)
+        log(`❌ 测试失败: ${error.message}`, 'error')
+        addResult('错误', error.message, 'error')
+        setStatus('❌ 失败', 'error')
+      } finally {
+        startBtn.disabled = false
+      }
+    }
+
+    startBtn.addEventListener('click', runTests)
+
+    log('准备就绪，点击"开始测试"按钮开始。', 'info')
+  </script>
+</body>
+</html>

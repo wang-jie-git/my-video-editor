@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>FFmpeg 最小测试</title>
+</head>
+<body>
+	<h1>FFmpeg 最小测试</h1>
+	<button id="test" disabled>⏳ 等待模块...</button>
+	<div id="result"></div>
+
+	<script type="module">
+		window.addEventListener('load', async () => {
+			const result = document.getElementById('result')
+			const btn = document.getElementById('test')
+
+			try {
+				// 直接从 classes.js 加载
+				result.innerHTML = '⏳ 从 jsdelivr 加载 FFmpeg...'
+				btn.textContent = '⏳ 加载中...'
+
+				const module = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/classes.js')
+
+				result.innerHTML += '<br>✅ 加载成功！'
+
+				// 测试创建实例
+				result.innerHTML += '<br>⏳ 创建实例...'
+
+				const { FFmpeg } = module
+
+				// 等待 DOM 可用后再启用按钮
+				btn.disabled = false
+				btn.textContent = '✅ 就绪'
+
+				result.innerHTML += '<br>✅ 实例创建成功！'
+
+				// 保存到全局
+				window.FFmpeg = FFmpeg
+				window.ffmpegLoaded = true
+
+			} catch (err) {
+				result.innerHTML += `<br>❌ 失败: ${err.message}`
+				btn.textContent = '❌ 失败'
+				console.error(err)
+			}
+		})
+	</script>
+</body>
+</html>

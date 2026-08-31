@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>FFmpegExporter 完整测试</title>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+			color: #fff;
+			padding: 40px;
+			min-height: 100vh;
+		}
+		.container { max-width: 1200px; margin: 0 auto; }
+		h1 {
+			font-size: 32px;
+			margin-bottom: 10px;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+		}
+		.subtitle { color: #999; margin-bottom: 30px; }
+		.panel {
+			background: rgba(255, 255, 255, 0.05);
+			border-radius: 12px;
+			padding: 24px;
+			margin-bottom: 20px;
+			border: 1px solid rgba(255, 255, 255, 0.1);
+		}
+		.panel h2 { font-size: 20px; margin-bottom: 16px; color: #fbbf24; }
+		button {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: white;
+			border: none;
+			padding: 12px 24px;
+			border-radius: 8px;
+			font-size: 16px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.3s;
+			margin-right: 12px;
+		}
+		button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); }
+		button:disabled { opacity: 0.5; cursor: not-allowed; }
+		.progress-bar {
+			width: 100%;
+			height: 8px;
+			background: rgba(255, 255, 255, 0.1);
+			border-radius: 4px;
+			overflow: hidden;
+			margin-top: 12px;
+		}
+		.progress-fill {
+			height: 100%;
+			background: linear-gradient(90deg, #10b981, #34d399);
+			transition: width 0.3s;
+			width: 0%;
+		}
+		.logs {
+			background: rgba(26, 26, 26, 0.9);
+			border-radius: 12px;
+			padding: 24px;
+			margin-bottom: 20px;
+			max-height: 500px;
+			overflow: auto;
+			font-family: 'Monaco', 'Courier New', monospace;
+			font-size: 13px;
+			line-height: 1.6;
+		}
+		.log-entry { margin-bottom: 4px; }
+		.log-info { color: #60a5fa; }
+		.log-success { color: #34d399; }
+		.log-error { color: #f87171; }
+		.log-warning { color: #fbbf24; }
+		.result-card {
+			background: rgba(255, 255, 255, 0.05);
+			border-radius: 8px;
+			padding: 16px;
+			margin-bottom: 16px;
+		}
+		.result-card h3 { font-size: 16px; margin-bottom: 12px; color: #60a5fa; }
+		.result-row { display: flex; justify-content: space-between; padding: 8px 0; }
+		.result-label { color: #999; }
+		.result-value { font-weight: 600; }
+		.success-banner {
+			background: rgba(16, 185, 129, 0.1);
+			border: 1px solid rgba(16, 185, 129, 0.3);
+			border-radius: 8px;
+			padding: 16px;
+			margin-bottom: 16px;
+		}
+		.error-banner {
+			background: rgba(239, 68, 68, 0.1);
+			border: 1px solid rgba(239, 68, 68, 0.3);
+			border-radius: 8px;
+			padding: 16px;
+			margin-bottom: 16px;
+		}
+		.info-box {
+			margin-top: 40px;
+			padding: 24px;
+			background: rgba(255, 255, 255, 0.05);
+			border-radius: 12px;
+		}
+		.info-box h3 { font-size: 18px; margin-bottom: 16px; color: #fbbf24; }
+		.info-box ul { color: #999; line-height: 1.8; padding-left: 20px; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>🎬 FFmpegExporter 完整测试</h1>
+		<p class="subtitle">验证 Canvas → PNG → FFmpeg → MP4 完整导出流程</p>
+
+		<!-- 测试控制 -->
+		<div class="panel">
+			<h2>🚀 测试控制</h2>
+			<button id="runTest" disabled>⏳ 等待 FFmpeg 加载...</button>
+			<span id="status" style="margin-left: 12px; color: #fbbf24;">⏳ 正在加载...</span>
+		</div>
+
+		<!-- 进度条 -->
+		<div id="progressContainer" style="display: none; margin-bottom: 20px;">
+			<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+				<span style="font-size: 14px; color: #999;">进度</span>
+				<span id="progressText" style="font-size: 14px; color: #60a5fa; font-weight: 600;">0%</span>
+			</div>
+			<div class="progress-bar">
+				<div id="progressFill" class="progress-fill"></div>
+			</div>
+		</div>
+
+		<!-- 日志 -->
+		<div class="logs" id="logs">
+			<p style="color: #666;">等待测试...</p>
+		</div>
+
+		<!-- 测试结果 -->
+		<div id="results"></div>
+
+		<!-- 使用说明 -->
+		<div class="info-box">
+			<h3>📝 使用说明</h3>
+			<ul>
+				<li>点击"开始完整测试"验证完整的导出流程</li>
+				<li>测试将自动执行：Canvas 渲染 → FFmpeg 编码 → MP4 输出</li>
+				<li>首次加载 FFmpeg 需要下载 ~25MB 核心文件，请耐心等待</li>
+				<li>如果遇到 SharedArrayBuffer 错误，请配置 COOP/COEP 头</li>
+				<li>测试视频仅 1 秒，快速验证功能正确性</li>
+			</ul>
+		</div>
+	</div>
+
+	<!-- 预加载 FFmpeg 模块 -->
+	<script type="module">
+		window.ffmpegLoadStatus = 'loading'
+
+		async function loadFFmpeg() {
+			try {
+				const [utilModule, ffmpegModule] = await Promise.all([
+					import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js'),
+					import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.1/dist/esm/classes.js'),
+				])
+
+				const { fetchFile, toBlobURL } = utilModule
+				const { FFmpeg } = ffmpegModule
+
+				window.FFmpeg = FFmpeg
+				window.FFmpegUtil = { fetchFile, toBlobURL }
+				window.ffmpegLoaded = true
+				window.ffmpegLoadStatus = 'success'
+
+				window.dispatchEvent(new Event('ffmpeg-ready'))
+			} catch (error) {
+				console.error('FFmpeg 加载错误:', error)
+				window.ffmpegLoadStatus = 'error'
+				window.ffmpegLoadError = error.message
+				window.dispatchEvent(new CustomEvent('ffmpeg-error', {
+					detail: { message: error.message }
+				}))
+			}
+		}
+
+		loadFFmpeg()
+	</script>
+
+	<script>
+		// 日志管理
+		const logs = []
+		const logsEl = document.getElementById('logs')
+
+		function addLog(message, type = 'info') {
+			const timestamp = new Date().toLocaleTimeString()
+			logs.push({ timestamp, message, type })
+			renderLogs()
+		}
+
+		function renderLogs() {
+			if (logs.length === 0) {
+				logsEl.innerHTML = '<p style="color: #666;">等待测试...</p>'
+				return
+			}
+
+			logsEl.innerHTML = logs.map(log => {
+				const colorClass = `log-${log.type}`
+				return `<div class="log-entry ${colorClass}">[${log.timestamp}] ${log.message}</div>`
+			}).join('')
+
+			logsEl.scrollTop = logsEl.scrollHeight
+		}
+
+		// 进度管理
+		function setProgress(percent) {
+			document.getElementById('progressFill').style.width = `${percent}%`
+			document.getElementById('progressText').textContent = `${percent.toFixed(0)}%`
+		}
+
+		function showProgress(show) {
+			document.getElementById('progressContainer').style.display = show ? 'block' : 'none'
+		}
+
+		// 检查 FFmpeg 状态
+		function checkFFmpegStatus() {
+			const status = window.ffmpegLoadStatus
+			const statusEl = document.getElementById('status')
+
+			if (status === 'success') {
+				addLog('✅ FFmpeg 模块加载成功', 'success')
+				statusEl.textContent = '✅ FFmpeg 就绪'
+				document.getElementById('runTest').disabled = false
+				document.getElementById('runTest').textContent = '▶️ 开始完整测试'
+				return true
+			} else if (status === 'error') {
+				addLog(`❌ FFmpeg 加载失败: ${window.ffmpegLoadError}`, 'error')
+				statusEl.textContent = '❌ FFmpeg 加载失败'
+				return true
+			}
+			return false
+		}
+
+		let checkInterval = setInterval(() => {
+			if (checkFFmpegStatus()) {
+				clearInterval(checkInterval)
+			}
+		}, 100)
+
+		// Canvas 渲染测试
+		async function runCanvasTest() {
+			addLog('🎨 开始 Canvas 渲染测试...', 'info')
+
+			try {
+				const startTime = performance.now()
+				const { CanvasRenderer } = await import('./canvas-renderer.js')
+
+				addLog('✅ CanvasRenderer 导入成功', 'success')
+				const renderer = new CanvasRenderer({ width: 640, height: 480, fps: 30 })
+				addLog('✅ CanvasRenderer 创建成功 (640x480)', 'success')
+
+				// 渲染 30 帧
+				const frameCount = 30
+				for (let i = 0; i < frameCount; i++) {
+					const r = Math.floor((i / frameCount) * 255)
+					const g = Math.floor(128 + (i / frameCount) * 127)
+					const b = 255
+
+					renderer.context.fillStyle = `rgb(${r}, ${g}, ${b})`
+					renderer.context.fillRect(0, 0, renderer.canvas.width, renderer.canvas.height)
+
+					renderer.context.fillStyle = '#fff'
+					renderer.context.font = 'bold 32px Arial'
+					renderer.context.textAlign = 'center'
+					renderer.context.fillText(`Frame ${i + 1}`, renderer.canvas.width / 2, renderer.canvas.height / 2)
+				}
+
+				const duration = performance.now() - startTime
+				addLog(`✅ 渲染完成: ${frameCount} 帧 (${duration.toFixed(0)}ms)`, 'success')
+
+				// 导出为 PNG
+				const blob = await new Promise((resolve, reject) => {
+					renderer.canvas.convertToBlob({ type: 'image/png' })
+						.then(resolve)
+						.catch(reject)
+				})
+				const size = blob.size
+				addLog(`✅ 导出成功: ${(size / 1024).toFixed(2)} KB`, 'success')
+
+				return { success: true, frames: frameCount, duration, outputSize: size }
+			} catch (error) {
+				addLog(`❌ Canvas 渲染失败: ${error.message}`, 'error')
+				return { success: false, error: error.message }
+			}
+		}
+
+		// FFmpeg 编码测试
+		async function runFFmpegEncodeTest() {
+			addLog('⚙️ 开始 FFmpeg 编码测试...', 'info')
+
+			try {
+				const FFmpeg = window.FFmpeg
+				const { fetchFile, toBlobURL } = window.FFmpegUtil
+
+				const ffmpeg = new FFmpeg()
+
+				ffmpeg.on('log', ({ message }) => {
+					addLog(`[FFmpeg] ${message}`, 'info')
+				})
+
+				ffmpeg.on('progress', ({ progress }) => {
+					setProgress(30 + progress * 70)
+				})
+
+				// 预下载 worker.js 和核心文件到本地（避免跨域 Worker 限制）
+				const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.1/dist/esm'
+				const workerURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.1/dist/esm/worker.js'
+
+				addLog('⏳ 预下载 FFmpeg 资源...', 'info')
+
+				// 下载 worker.js
+				const workerData = await fetchFile(workerURL)
+				const workerBlob = new Blob([workerData], { type: 'application/javascript' })
+				const localWorkerURL = URL.createObjectURL(workerBlob)
+				addLog('✅ Worker 文件预下载完成', 'success')
+				setProgress(10)
+
+				// 下载核心文件
+				const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript')
+				const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm')
+				addLog('✅ 核心文件预下载完成', 'success')
+				setProgress(20)
+
+				// 加载 FFmpeg（使用本地 worker）
+				addLog('⏳ 正在加载 FFmpeg...', 'info')
+
+				// 手动创建 worker（绕过跨域限制）
+				const worker = new Worker(localWorkerURL, { type: 'module' })
+				ffmpeg['#worker'] = worker
+
+				await ffmpeg.load({
+					coreURL: coreURL,
+					wasmURL: wasmURL,
+				})
+
+				ffmpeg.fetchFile = fetchFile
+				addLog('✅ FFmpeg 加载成功', 'success')
+				setProgress(30)
+
+				// 创建测试图片
+				const testCanvas = document.createElement('canvas')
+				testCanvas.width = 640
+				testCanvas.height = 480
+				const testCtx = testCanvas.getContext('2d')
+
+				const gradient = testCtx.createLinearGradient(0, 0, 640, 480)
+				gradient.addColorStop(0, '#667eea')
+				gradient.addColorStop(1, '#764ba2')
+				testCtx.fillStyle = gradient
+				testCtx.fillRect(0, 0, 640, 480)
+
+				testCtx.fillStyle = '#fff'
+				testCtx.font = 'bold 48px Arial'
+				testCtx.textAlign = 'center'
+				testCtx.fillText('FFmpegExporter Test', 320, 220)
+				testCtx.font = '24px Arial'
+				testCtx.fillText('Test Video - 1 second', 320, 260)
+
+				const testBlob = await new Promise((resolve, reject) => {
+					testCanvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Failed')), 'image/png')
+				})
+				const testData = new Uint8Array(await testBlob.arrayBuffer())
+
+				await ffmpeg.writeFile('test.png', testData)
+				addLog('✅ 测试图片写入成功', 'success')
+				setProgress(40)
+
+				// 编码
+				addLog('⏳ 开始编码 MP4...', 'info')
+				const startTime = performance.now()
+
+				await ffmpeg.exec([
+					'-framerate', '1',
+					'-i', 'test.png',
+					'-t', '1',
+					'-c:v', 'libx264',
+					'-pix_fmt', 'yuv420p',
+					'-y',
+					'output.mp4',
+				])
+
+				const encodeDuration = performance.now() - startTime
+				addLog(`✅ 编码完成 (${encodeDuration.toFixed(0)}ms)`, 'success')
+				setProgress(70)
+
+				// 读取输出
+				const outputData = await ffmpeg.readFile('output.mp4')
+				const outputSize = outputData.length
+				addLog(`✅ 读取成功: ${(outputSize / 1024).toFixed(2)} KB`, 'success')
+				setProgress(80)
+
+				// 清理
+				await ffmpeg.deleteFile('test.png')
+				await ffmpeg.deleteFile('output.mp4')
+
+				addLog('🧹 清理完成', 'info')
+				setProgress(100)
+
+				return { success: true, duration: encodeDuration, outputSize, format: 'MP4 (H.264)' }
+			} catch (error) {
+				addLog(`❌ FFmpeg 编码失败: ${error.message}`, 'error')
+				return { success: false, error: error.message }
+			}
+		}
+
+		// 完整测试
+		async function runFullTest() {
+			addLog('🎬 开始完整导出流程测试...', 'info')
+			addLog('📋 步骤 1/2: Canvas 渲染', 'info')
+
+			document.getElementById('runTest').disabled = true
+			showProgress(true)
+			setProgress(0)
+
+			try {
+				const canvasResult = await runCanvasTest()
+				setProgress(50)
+				addLog('✅ Canvas 渲染测试通过', 'success')
+
+				if (!canvasResult.success) {
+					throw new Error('Canvas 渲染失败')
+				}
+
+				addLog('📋 步骤 2/2: FFmpeg 编码', 'info')
+				const ffmpegResult = await runFFmpegEncodeTest()
+
+				if (!ffmpegResult.success) {
+					throw new Error('FFmpeg 编码失败')
+				}
+
+				const totalDuration = (canvasResult.duration || 0) + (ffmpegResult.duration || 0)
+
+				addLog('', 'info')
+				addLog('🎉 完整导出流程测试通过！', 'success')
+				addLog(`⏱️ 总耗时: ${totalDuration.toFixed(0)}ms`, 'info')
+				addLog(`📦 输出大小: ${(ffmpegResult.outputSize / 1024).toFixed(2)} KB`, 'info')
+				addLog('📹 格式: MP4 (H.264)', 'info')
+				addLog('', 'info')
+				addLog('✨ Canvas → PNG → FFmpeg → MP4 流程验证成功！', 'success')
+
+				showResults({
+					success: true,
+					canvas: canvasResult,
+					ffmpeg: ffmpegResult,
+					total: {
+						duration: totalDuration,
+						outputSize: ffmpegResult.outputSize,
+						format: 'MP4 (H.264)',
+					}
+				})
+			} catch (error) {
+				addLog(`❌ 测试失败: ${error.message}`, 'error')
+				showResults({ success: false, error: error.message })
+			} finally {
+				document.getElementById('runTest').disabled = false
+			}
+		}
+
+		// 显示结果
+		function showResults(results) {
+			const resultsEl = document.getElementById('results')
+
+			if (results.success) {
+				resultsEl.innerHTML = `
+					<div class="success-banner">
+						<p style="color: #10b981; font-size: 18px; font-weight: 600;">✅ 所有测试通过！</p>
+					</div>
+
+					<div class="result-card">
+						<h3>🎨 Canvas 渲染</h3>
+						<div class="result-row">
+							<span class="result-label">帧数</span>
+							<span class="result-value">${results.canvas.frames} 帧</span>
+						</div>
+						<div class="result-row">
+							<span class="result-label">耗时</span>
+							<span class="result-value">${results.canvas.duration.toFixed(0)}ms</span>
+						</div>
+						<div class="result-row">
+							<span class="result-label">输出大小</span>
+							<span class="result-value">${(results.canvas.outputSize / 1024).toFixed(2)} KB</span>
+						</div>
+					</div>
+
+					<div class="result-card">
+						<h3>⚙️ FFmpeg 编码</h3>
+						<div class="result-row">
+							<span class="result-label">格式</span>
+							<span class="result-value">${results.ffmpeg.format}</span>
+						</div>
+						<div class="result-row">
+							<span class="result-label">耗时</span>
+							<span class="result-value">${results.ffmpeg.duration.toFixed(0)}ms</span>
+						</div>
+						<div class="result-row">
+							<span class="result-label">输出大小</span>
+							<span class="result-value">${(results.ffmpeg.outputSize / 1024).toFixed(2)} KB</span>
+						</div>
+					</div>
+
+					<div class="result-card" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2);">
+						<h3 style="color: #10b981;">🎬 完整流程</h3>
+						<div class="result-row">
+							<span class="result-label">总耗时</span>
+							<span class="result-value">${results.total.duration.toFixed(0)}ms</span>
+						</div>
+						<div class="result-row">
+							<span class="result-label">输出大小</span>
+							<span class="result-value">${(results.total.outputSize / 1024).toFixed(2)} KB</span>
+						</div>
+						<div class="result-row">
+							<span class="result-label">格式</span>
+							<span class="result-value">${results.total.format}</span>
+						</div>
+					</div>
+				`
+			} else {
+				resultsEl.innerHTML = `
+					<div class="error-banner">
+						<p style="color: #ef4444; font-size: 18px; font-weight: 600;">❌ 测试失败</p>
+						<p style="color: #999; margin-top: 8px;">${results.error}</p>
+					</div>
+				`
+			}
+		}
+
+		// 绑定事件
+		document.getElementById('runTest').addEventListener('click', runFullTest)
+
+		// 监听事件（备用方案）
+		window.addEventListener('ffmpeg-ready', () => {
+			checkFFmpegStatus()
+		})
+
+		window.addEventListener('ffmpeg-error', (event) => {
+			addLog(`❌ FFmpeg 加载失败: ${event.detail.message}`, 'error')
+			document.getElementById('status').textContent = '❌ 加载失败'
+			document.getElementById('status').style.color = '#f87171'
+		})
+	</script>
+</body>
+</html>

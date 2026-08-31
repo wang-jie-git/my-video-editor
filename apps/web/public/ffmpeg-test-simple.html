@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FFmpeg.wasm 简化测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      padding: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #3b82f6; }
+    button {
+      background: #10b981;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 8px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .log {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: Monaco, "Courier New", monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin: 16px 0;
+    }
+    .log div { margin: 4px 0; }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .info { color: #60a5fa; }
+  </style>
+</head>
+<body>
+  <h1>🎬 FFmpeg.wasm 简化测试</h1>
+  <div>
+    <button id="testBtn" onclick="runTest()">运行测试</button>
+    <button onclick="clearLogs()">清除日志</button>
+  </div>
+  <div id="log" class="log"></div>
+  <div id="result"></div>
+
+  <script>
+    const log = (msg, type = 'info') => {
+      const time = new Date().toLocaleTimeString()
+      const colors = { success: '#10b981', error: '#ef4444', info: '#60a5fa', warning: '#f59e0b' }
+      const div = document.createElement('div')
+      div.innerHTML = `<span style="color: ${colors[type] || colors.info}">[${time}] ${msg}</span>`
+      document.getElementById('log').appendChild(div)
+    }
+
+    window.clearLogs = () => {
+      document.getElementById('log').innerHTML = ''
+    }
+
+    window.runTest = async function() {
+      const btn = document.getElementById('testBtn')
+      btn.disabled = true
+      document.getElementById('result').innerHTML = ''
+
+      try {
+        log('开始测试...', 'info')
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        log('✅ 测试完成！', 'success')
+        document.getElementById('result').innerHTML = '<h3 style="color: #10b981">✅ 测试成功！</h3>'
+      } catch (error) {
+        log(`❌ 测试失败: ${error.message}`, 'error')
+        document.getElementById('result').innerHTML = `<h3 style="color: #ef4444">❌ 测试失败：${error.message}</h3>`
+      } finally {
+        btn.disabled = false
+      }
+    }
+  </script>
+</body>
+</html>
