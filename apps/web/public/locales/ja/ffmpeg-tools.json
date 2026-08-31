@@ -1,0 +1,114 @@
+{
+  "ai": {
+    "ffmpeg": {
+      "title": "FFmpeg ビデオ処理ツール",
+      "whenToUse": {
+        "title": "FFmpeg ツールを使用するタイミング",
+        "useFFmpeg": "ユーザーが以下のリクエストをした場合に FFmpeg ツールを使用してください：",
+        "useCases": [
+          "ビデオフォーマット変換（MP4、WebM、AVI など）",
+          "ビデオのマージまたは分割",
+          "字幕の焼き込みまたは解析",
+          "オーディオ処理（イコライザー、コンプレッサー、リバーブ）",
+          "ビデオフィルター（ぼかし、シャープ化、色補正）",
+          "ビデオ速度調整または逆再生",
+          "サムネイル生成"
+        ],
+        "doNotUse": "以下の場合には FFmpeg ツールを使用しないでください：",
+        "doNotUseCases": [
+          "タイムラインに要素を追加 → `add_element_to_timeline` を使用",
+          "要素プロパティを更新 → `update_element_properties` を使用",
+          "AI で画像/ビデオを生成 → `generate_image` / `generate_video` を使用"
+        ]
+      },
+      "concepts": {
+        "title": "コアコンセプト",
+        "paths": {
+          "title": "絶対パスが必要",
+          "description": "すべてのファイルパスは `/` で始まる必要があります（例：`/video.mp4`）"
+        },
+        "services": {
+          "title": "サービス可用性",
+          "description": "EditorCore と FFmpegService が利用可能か確認してください"
+        },
+        "response": {
+          "title": "統一レスポンス形式",
+          "description": "すべてのツールは `{ success: boolean, message: string, data?: any }` を返します"
+        },
+        "errorHandling": {
+          "title": "エラーハンドリング",
+          "description": "常にパラメータを検証し、エラーを適切に処理してください"
+        }
+      },
+      "quickReference": {
+        "title": "クイックリファレンス",
+        "categories": {
+          "basic": {
+            "name": "基本",
+            "tools": ["execute_ffmpeg_command", "get_ffmpeg_status", "check_file_exists"],
+            "useCases": "コマンド実行、ステータス確認、ファイル検証"
+          },
+          "export": {
+            "name": "エクスポート",
+            "tools": ["export_video", "get_video_info", "get_video_duration", "generate_thumbnail"],
+            "useCases": "タイムラインエクスポート、情報取得、サムネイル生成"
+          },
+          "format": {
+            "name": "フォーマット",
+            "tools": ["convert_video_format", "batch_convert_format"],
+            "useCases": "フォーマット変換（MP4/WebM/AVI）"
+          },
+          "filters": {
+            "name": "フィルター",
+            "tools": ["apply_color_correction", "apply_blur", "apply_sharpen", "apply_lut", "apply_filter_chain", "adjust_video_speed", "reverse_video"],
+            "useCases": "ビジュアルエフェクトと調整"
+          },
+          "subtitles": {
+            "name": "字幕",
+            "tools": ["parse_subtitles", "burn_subtitles", "add_subtitle_track", "translate_subtitles"],
+            "useCases": "字幕の解析、焼き込み、追加、翻訳"
+          },
+          "audio": {
+            "name": "オーディオ",
+            "tools": ["apply_equalizer", "apply_compressor", "apply_reverb", "apply_audio_effects_chain", "normalize_audio"],
+            "useCases": "オーディオ処理と強化"
+          },
+          "mergeSplit": {
+            "name": "マージ/分割",
+            "tools": ["merge_videos", "concat_with_transitions", "split_video", "trim_video"],
+            "useCases": "ビデオの結合または分割"
+          }
+        }
+      },
+      "workflow": {
+        "title": "標準ワークフロー",
+        "steps": [
+          "FFmpeg ステータスを確認",
+          "入力ファイルの存在を検証",
+          "操作を実行",
+          "ユーザーに報告"
+        ]
+      },
+      "notes": {
+        "title": "重要な注意事項",
+        "longRunning": "長時間実行操作：ビデオ処理には数秒から数分かかる場合があります。ユーザーに進捗を知らせてください。",
+        "qualityPresets": "品質プリセット：最終エクスポートには `quality: \"high\"`、プレビューには `\"low\"` を使用",
+        "batchOperations": "バッチ操作：複数ファイルには `batch_convert_format` を使用",
+        "advancedUsers": "上級ユーザー：`execute_ffmpeg_command` は完全な FFmpeg 制御を提供しますが、FFmpeg CLI の知識が必要です"
+      },
+      "documentation": {
+        "title": "詳細ドキュメント",
+        "reference": "例、パラメータ、ベストプラクティスを含む包括的なツールドキュメントについては、以下をご覧ください：",
+        "path": "docs/ai/ffmpeg-tools-guide.md",
+        "sections": {
+          "quickStart": "クイックスタート - FFmpeg ツールを使用するタイミング",
+          "coreConcepts": "コアコンセプト - ファイルパス、サービスチェック、レスポンス形式",
+          "toolReference": "ツールリファレンス - 全 29 ツールのパラメータと例",
+          "scenarios": "使用シナリオ - 一般的なタスクのワークフロー",
+          "errorHandling": "エラーハンドリング - トラブルシューティングガイド",
+          "performance": "パフォーマンス - 最適化戦略"
+        }
+      }
+    }
+  }
+}

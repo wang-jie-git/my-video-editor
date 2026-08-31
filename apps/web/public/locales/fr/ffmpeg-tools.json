@@ -1,0 +1,114 @@
+{
+  "ai": {
+    "ffmpeg": {
+      "title": "Outils de traitement vidéo FFmpeg",
+      "whenToUse": {
+        "title": "Quand utiliser les outils FFmpeg",
+        "useFFmpeg": "Utilisez les outils FFmpeg lorsque l'utilisateur demande :",
+        "useCases": [
+          "Conversion de format vidéo (MP4, WebM, AVI, etc.)",
+          "Fusion ou division de vidéos",
+          "Gravure ou analyse de sous-titres",
+          "Traitement audio (égaliseur, compresseur, réverbération)",
+          "Filtres vidéo (flou, netteté, correction des couleurs)",
+          "Ajustement de la vitesse ou inversion vidéo",
+          "Génération de miniatures"
+        ],
+        "doNotUse": "N'utilisez PAS les outils FFmpeg pour :",
+        "doNotUseCases": [
+          "Ajouter des éléments à la timeline → utilisez `add_element_to_timeline`",
+          "Mettre à jour les propriétés des éléments → utilisez `update_element_properties`",
+          "Générer des images/vidéos avec l'IA → utilisez `generate_image` / `generate_video`"
+        ]
+      },
+      "concepts": {
+        "title": "Concepts de base",
+        "paths": {
+          "title": "Chemins absolus requis",
+          "description": "Tous les chemins de fichiers DOIVENT commencer par `/` (ex: `/video.mp4`)"
+        },
+        "services": {
+          "title": "Disponibilité du service",
+          "description": "Vérifiez si EditorCore et FFmpegService sont disponibles"
+        },
+        "response": {
+          "title": "Format de réponse unifié",
+          "description": "Tous les outils renvoient `{ success: boolean, message: string, data?: any }`"
+        },
+        "errorHandling": {
+          "title": "Gestion des erreurs",
+          "description": "Validez toujours les paramètres et gérez les erreurs avec élégance"
+        }
+      },
+      "quickReference": {
+        "title": "Référence rapide",
+        "categories": {
+          "basic": {
+            "name": "Base",
+            "tools": ["execute_ffmpeg_command", "get_ffmpeg_status", "check_file_exists"],
+            "useCases": "Exécuter des commandes, vérifier l'état, valider les fichiers"
+          },
+          "export": {
+            "name": "Exportation",
+            "tools": ["export_video", "get_video_info", "get_video_duration", "generate_thumbnail"],
+            "useCases": "Exporter la timeline, obtenir des informations, générer des miniatures"
+          },
+          "format": {
+            "name": "Format",
+            "tools": ["convert_video_format", "batch_convert_format"],
+            "useCases": "Convertir entre formats (MP4/WebM/AVI)"
+          },
+          "filters": {
+            "name": "Filtres",
+            "tools": ["apply_color_correction", "apply_blur", "apply_sharpen", "apply_lut", "apply_filter_chain", "adjust_video_speed", "reverse_video"],
+            "useCases": "Effets visuels et ajustements"
+          },
+          "subtitles": {
+            "name": "Sous-titres",
+            "tools": ["parse_subtitles", "burn_subtitles", "add_subtitle_track", "translate_subtitles"],
+            "useCases": "Analyser, graver, ajouter, traduire des sous-titres"
+          },
+          "audio": {
+            "name": "Audio",
+            "tools": ["apply_equalizer", "apply_compressor", "apply_reverb", "apply_audio_effects_chain", "normalize_audio"],
+            "useCases": "Traitement et amélioration audio"
+          },
+          "mergeSplit": {
+            "name": "Fusionner/Diviser",
+            "tools": ["merge_videos", "concat_with_transitions", "split_video", "trim_video"],
+            "useCases": "Combiner ou diviser des vidéos"
+          }
+        }
+      },
+      "workflow": {
+        "title": "Flux de travail standard",
+        "steps": [
+          "Vérifier le statut FFmpeg",
+          "Valider que le fichier d'entrée existe",
+          "Effectuer l'opération",
+          "Rapporter à l'utilisateur"
+        ]
+      },
+      "notes": {
+        "title": "Remarques importantes",
+        "longRunning": "Opérations de longue durée : Le traitement vidéo peut prendre de quelques secondes à plusieurs minutes. Informez l'utilisateur de la progression.",
+        "qualityPresets": "Préréglages de qualité : Utilisez `quality: \"high\"` pour les exports finaux, `\"low\"` pour les aperçus",
+        "batchOperations": "Opérations par lot : Utilisez `batch_convert_format` pour plusieurs fichiers",
+        "advancedUsers": "Utilisateurs avancés : `execute_ffmpeg_command` offre un contrôle complet de FFmpeg mais nécessite une connaissance de la CLI FFmpeg"
+      },
+      "documentation": {
+        "title": "Documentation détaillée",
+        "reference": "Pour une documentation complète des outils avec exemples, paramètres et meilleures pratiques, consultez :",
+        "path": "docs/ai/ffmpeg-tools-guide.md",
+        "sections": {
+          "quickStart": "Démarrage rapide - Quand utiliser les outils FFmpeg",
+          "coreConcepts": "Concepts de base - Chemins de fichiers, vérifications de service, format de réponse",
+          "toolReference": "Référence des outils - Paramètres et exemples des 29 outils",
+          "scenarios": "Scénarios d'utilisation - Flux de travail pour les tâches courantes",
+          "errorHandling": "Gestion des erreurs - Guide de dépannage",
+          "performance": "Performance - Stratégies d'optimisation"
+        }
+      }
+    }
+  }
+}

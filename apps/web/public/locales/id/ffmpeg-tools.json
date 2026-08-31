@@ -1,0 +1,114 @@
+{
+  "ai": {
+    "ffmpeg": {
+      "title": "Alat Pemrosesan Video FFmpeg",
+      "whenToUse": {
+        "title": "Kapan Menggunakan Alat FFmpeg",
+        "useFFmpeg": "Gunakan alat FFmpeg ketika pengguna meminta:",
+        "useCases": [
+          "Konversi format video (MP4, WebM, AVI, dll.)",
+          "Penggabungan atau pemisahan video",
+          "Pembakaran atau penguraian subtitle",
+          "Pemrosesan audio (equalizer, kompresor, gema)",
+          "Filter video (blur, ketajaman, koreksi warna)",
+          "Penyesuaian kecepatan atau pembalikan video",
+          "Pembuatan thumbnail"
+        ],
+        "doNotUse": "JANGAN gunakan alat FFmpeg untuk:",
+        "doNotUseCases": [
+          "Menambahkan elemen ke timeline → gunakan `add_element_to_timeline`",
+          "Memperbarui properti elemen → gunakan `update_element_properties`",
+          "Membuat gambar/video dengan AI → gunakan `generate_image` / `generate_video`"
+        ]
+      },
+      "concepts": {
+        "title": "Konsep Dasar",
+        "paths": {
+          "title": "Jalur Absolut Diperlukan",
+          "description": "Semua jalur file HARUS dimulai dengan `/` (contoh: `/video.mp4`)"
+        },
+        "services": {
+          "title": "Ketersediaan Layanan",
+          "description": "Periksa apakah EditorCore dan FFmpegService tersedia"
+        },
+        "response": {
+          "title": "Format Respons Terpadu",
+          "description": "Semua alat mengembalikan `{ success: boolean, message: string, data?: any }`"
+        },
+        "errorHandling": {
+          "title": "Penanganan Kesalahan",
+          "description": "Selalu validasi parameter dan tangani kesalahan dengan anggun"
+        }
+      },
+      "quickReference": {
+        "title": "Referensi Cepat",
+        "categories": {
+          "basic": {
+            "name": "Dasar",
+            "tools": ["execute_ffmpeg_command", "get_ffmpeg_status", "check_file_exists"],
+            "useCases": "Jalankan perintah, periksa status, validasi file"
+          },
+          "export": {
+            "name": "Ekspor",
+            "tools": ["export_video", "get_video_info", "get_video_duration", "generate_thumbnail"],
+            "useCases": "Ekspor timeline, dapatkan info, buat thumbnail"
+          },
+          "format": {
+            "name": "Format",
+            "tools": ["convert_video_format", "batch_convert_format"],
+            "useCases": "Konversi antar format (MP4/WebM/AVI)"
+          },
+          "filters": {
+            "name": "Filter",
+            "tools": ["apply_color_correction", "apply_blur", "apply_sharpen", "apply_lut", "apply_filter_chain", "adjust_video_speed", "reverse_video"],
+            "useCases": "Efek visual dan penyesuaian"
+          },
+          "subtitles": {
+            "name": "Subtitle",
+            "tools": ["parse_subtitles", "burn_subtitles", "add_subtitle_track", "translate_subtitles"],
+            "useCases": "Uraikan, bakar, tambah, terjemahkan subtitle"
+          },
+          "audio": {
+            "name": "Audio",
+            "tools": ["apply_equalizer", "apply_compressor", "apply_reverb", "apply_audio_effects_chain", "normalize_audio"],
+            "useCases": "Pemrosesan dan peningkatan audio"
+          },
+          "mergeSplit": {
+            "name": "Gabung/Bagi",
+            "tools": ["merge_videos", "concat_with_transitions", "split_video", "trim_video"],
+            "useCases": "Menggabungkan atau membagi video"
+          }
+        }
+      },
+      "workflow": {
+        "title": "Alur Kerja Standar",
+        "steps": [
+          "Periksa status FFmpeg",
+          "Validasi file input ada",
+          "Lakukan operasi",
+          "Laporkan ke pengguna"
+        ]
+      },
+      "notes": {
+        "title": "Catatan Penting",
+        "longRunning": "Operasi berjalan lama: Pemrosesan video dapat memakan waktu dari beberapa detik hingga menit. Beri tahu pengguna tentang kemajuan.",
+        "qualityPresets": "Preset kualitas: Gunakan `quality: \"high\"` untuk ekspor akhir, `\"low\"` untuk pratinjau",
+        "batchOperations": "Operasi batch: Gunakan `batch_convert_format` untuk beberapa file",
+        "advancedUsers": "Pengguna tingkat lanjut: `execute_ffmpeg_command` memberikan kontrol FFmpeg penuh tetapi memerlukan pengetahuan tentang FFmpeg CLI"
+      },
+      "documentation": {
+        "title": "Dokumentasi Terperinci",
+        "reference": "Untuk dokumentasi alat lengkap dengan contoh, parameter, dan praktik terbaik, lihat:",
+        "path": "docs/ai/ffmpeg-tools-guide.md",
+        "sections": {
+          "quickStart": "Mulai Cepat - Kapan menggunakan alat FFmpeg",
+          "coreConcepts": "Konsep Dasar - Jalur file, pemeriksaan layanan, format respons",
+          "toolReference": "Referensi Alat - Semua 29 parameter dan contoh alat",
+          "scenarios": "Skenario Penggunaan - Alur kerja untuk tugas umum",
+          "errorHandling": "Penanganan Kesalahan - Panduan pemecahan masalah",
+          "performance": "Performa - Strategi optimasi"
+        }
+      }
+    }
+  }
+}

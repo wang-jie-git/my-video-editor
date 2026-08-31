@@ -1,0 +1,114 @@
+{
+  "ai": {
+    "ffmpeg": {
+      "title": "Инструменты обработки видео FFmpeg",
+      "whenToUse": {
+        "title": "Когда использовать инструменты FFmpeg",
+        "useFFmpeg": "Используйте инструменты FFmpeg, когда пользователь запрашивает:",
+        "useCases": [
+          "Конвертацию формата видео (MP4, WebM, AVI и т.д.)",
+          "Объединение или разделение видео",
+          "Вжигание или разбор субтитров",
+          "Обработку аудио (эквалайзер, компрессор, реверберация)",
+          "Видеофильтры (размытие, резкость, коррекция цвета)",
+          "Регулировку скорости видео или обратное воспроизведение",
+          "Генерацию миниатюр"
+        ],
+        "doNotUse": "НЕ используйте инструменты FFmpeg для:",
+        "doNotUseCases": [
+          "Добавления элементов на таймлайн → используйте `add_element_to_timeline`",
+          "Обновления свойств элементов → используйте `update_element_properties`",
+          "Генерации изображений/видео с ИИ → используйте `generate_image` / `generate_video`"
+        ]
+      },
+      "concepts": {
+        "title": "Основные концепции",
+        "paths": {
+          "title": "Требуются абсолютные пути",
+          "description": "Все пути к файлам ДОЛЖНЫ начинаться с `/` (например, `/video.mp4`)"
+        },
+        "services": {
+          "title": "Доступность сервиса",
+          "description": "Проверьте, доступны ли EditorCore и FFmpegService"
+        },
+        "response": {
+          "title": "Единый формат ответа",
+          "description": "Все инструменты возвращают `{ success: boolean, message: string, data?: any }`"
+        },
+        "errorHandling": {
+          "title": "Обработка ошибок",
+          "description": "Всегда проверяйте параметры и изящно обрабатывайте ошибки"
+        }
+      },
+      "quickReference": {
+        "title": "Быстрая справка",
+        "categories": {
+          "basic": {
+            "name": "Основные",
+            "tools": ["execute_ffmpeg_command", "get_ffmpeg_status", "check_file_exists"],
+            "useCases": "Выполнение команд, проверка статуса, валидация файлов"
+          },
+          "export": {
+            "name": "Экспорт",
+            "tools": ["export_video", "get_video_info", "get_video_duration", "generate_thumbnail"],
+            "useCases": "Экспорт таймлайна, получение информации, генерация миниатюр"
+          },
+          "format": {
+            "name": "Формат",
+            "tools": ["convert_video_format", "batch_convert_format"],
+            "useCases": "Конвертация между форматами (MP4/WebM/AVI)"
+          },
+          "filters": {
+            "name": "Фильтры",
+            "tools": ["apply_color_correction", "apply_blur", "apply_sharpen", "apply_lut", "apply_filter_chain", "adjust_video_speed", "reverse_video"],
+            "useCases": "Визуальные эффекты и корректировки"
+          },
+          "subtitles": {
+            "name": "Субтитры",
+            "tools": ["parse_subtitles", "burn_subtitles", "add_subtitle_track", "translate_subtitles"],
+            "useCases": "Разбор, вжигание, добавление, перевод субтитров"
+          },
+          "audio": {
+            "name": "Аудио",
+            "tools": ["apply_equalizer", "apply_compressor", "apply_reverb", "apply_audio_effects_chain", "normalize_audio"],
+            "useCases": "Обработка и улучшение аудио"
+          },
+          "mergeSplit": {
+            "name": "Объединение/Разделение",
+            "tools": ["merge_videos", "concat_with_transitions", "split_video", "trim_video"],
+            "useCases": "Объединение или разделение видео"
+          }
+        }
+      },
+      "workflow": {
+        "title": "Стандартный рабочий процесс",
+        "steps": [
+          "Проверить статус FFmpeg",
+          "Валидировать существование входного файла",
+          "Выполнить операцию",
+          "Сообщить пользователю"
+        ]
+      },
+      "notes": {
+        "title": "Важные примечания",
+        "longRunning": "Долгие операции: Обработка видео может занять от нескольких секунд до минут. Информируйте пользователя о прогрессе.",
+        "qualityPresets": "Предустановки качества: Используйте `quality: \"high\"` для финального экспорта, `\"low\"` для предпросмотра",
+        "batchOperations": "Пакетные операции: Используйте `batch_convert_format` для нескольких файлов",
+        "advancedUsers": "Продвинутые пользователи: `execute_ffmpeg_command` предоставляет полный контроль FFmpeg, но требует знания FFmpeg CLI"
+      },
+      "documentation": {
+        "title": "Подробная документация",
+        "reference": "Для полной документации по инструментам с примерами, параметрами и лучшими практиками см.:",
+        "path": "docs/ai/ffmpeg-tools-guide.md",
+        "sections": {
+          "quickStart": "Быстрый старт - Когда использовать инструменты FFmpeg",
+          "coreConcepts": "Основные концепции - Пути к файлам, проверка сервисов, формат ответа",
+          "toolReference": "Справочник инструментов - Параметры и примеры всех 29 инструментов",
+          "scenarios": "Сценарии использования - Рабочие процессы для обычных задач",
+          "errorHandling": "Обработка ошибок - Руководство по устранению неполадок",
+          "performance": "Производительность - Стратегии оптимизации"
+        }
+      }
+    }
+  }
+}

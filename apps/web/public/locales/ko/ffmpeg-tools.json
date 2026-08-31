@@ -1,0 +1,114 @@
+{
+  "ai": {
+    "ffmpeg": {
+      "title": "FFmpeg 비디오 처리 도구",
+      "whenToUse": {
+        "title": "FFmpeg 도구를 사용하는 경우",
+        "useFFmpeg": "사용자가 다음 요청을 할 때 FFmpeg 도구를 사용하세요:",
+        "useCases": [
+          "비디오 형식 변환 (MP4, WebM, AVI 등)",
+          "비디오 병합 또는 분할",
+          "자막 굽기 또는 파싱",
+          "오디오 처리 (이퀄라이저, 컴프레서, 리버브)",
+          "비디오 필터 (흐림, 선명도, 색상 보정)",
+          "비디오 속도 조정 또는 역재생",
+          "썸네일 생성"
+        ],
+        "doNotUse": "다음 경우에는 FFmpeg 도구를 사용하지 마세요:",
+        "doNotUseCases": [
+          "타임라인에 요소 추가 → `add_element_to_timeline` 사용",
+          "요소 속성 업데이트 → `update_element_properties` 사용",
+          "AI로 이미지/비디오 생성 → `generate_image` / `generate_video` 사용"
+        ]
+      },
+      "concepts": {
+        "title": "핵심 개념",
+        "paths": {
+          "title": "절대 경로 필요",
+          "description": "모든 파일 경로는 `/`로 시작해야 합니다 (예: `/video.mp4`)"
+        },
+        "services": {
+          "title": "서비스 가용성",
+          "description": "EditorCore와 FFmpegService가 사용 가능한지 확인하세요"
+        },
+        "response": {
+          "title": "통일된 응답 형식",
+          "description": "모든 도구는 `{ success: boolean, message: string, data?: any }`를 반환합니다"
+        },
+        "errorHandling": {
+          "title": "오류 처리",
+          "description": "항상 매개변수를 검증하고 오류를 우아하게 처리하세요"
+        }
+      },
+      "quickReference": {
+        "title": "빠른 참조",
+        "categories": {
+          "basic": {
+            "name": "기본",
+            "tools": ["execute_ffmpeg_command", "get_ffmpeg_status", "check_file_exists"],
+            "useCases": "명령 실행, 상태 확인, 파일 검증"
+          },
+          "export": {
+            "name": "내보내기",
+            "tools": ["export_video", "get_video_info", "get_video_duration", "generate_thumbnail"],
+            "useCases": "타임라인 내보내기, 정보 가져오기, 썸네일 생성"
+          },
+          "format": {
+            "name": "형식",
+            "tools": ["convert_video_format", "batch_convert_format"],
+            "useCases": "형식 변환 (MP4/WebM/AVI)"
+          },
+          "filters": {
+            "name": "필터",
+            "tools": ["apply_color_correction", "apply_blur", "apply_sharpen", "apply_lut", "apply_filter_chain", "adjust_video_speed", "reverse_video"],
+            "useCases": "비주얼 이펙트 및 조정"
+          },
+          "subtitles": {
+            "name": "자막",
+            "tools": ["parse_subtitles", "burn_subtitles", "add_subtitle_track", "translate_subtitles"],
+            "useCases": "자막 파싱, 굽기, 추가, 번역"
+          },
+          "audio": {
+            "name": "오디오",
+            "tools": ["apply_equalizer", "apply_compressor", "apply_reverb", "apply_audio_effects_chain", "normalize_audio"],
+            "useCases": "오디오 처리 및 향상"
+          },
+          "mergeSplit": {
+            "name": "병합/분할",
+            "tools": ["merge_videos", "concat_with_transitions", "split_video", "trim_video"],
+            "useCases": "비디오 결합 또는 분할"
+          }
+        }
+      },
+      "workflow": {
+        "title": "표준 워크플로우",
+        "steps": [
+          "FFmpeg 상태 확인",
+          "입력 파일 존재 검증",
+          "작업 수행",
+          "사용자에게 보고"
+        ]
+      },
+      "notes": {
+        "title": "중요 참고 사항",
+        "longRunning": "장시간 실행 작업: 비디오 처리에는 몇 초에서 몇 분이 걸릴 수 있습니다. 사용자에게 진행 상황을 알리세요.",
+        "qualityPresets": "품질 프리셋: 최종 내보내기에는 `quality: \"high\"`, 미리보기에는 `\"low\"` 사용",
+        "batchOperations": "일괄 작업: 여러 파일에는 `batch_convert_format` 사용",
+        "advancedUsers": "고급 사용자: `execute_ffmpeg_command`는 완전한 FFmpeg 제어를 제공하지만 FFmpeg CLI 지식이 필요합니다"
+      },
+      "documentation": {
+        "title": "상세 문서",
+        "reference": "예제, 매개변수, 모범 사례가 포함된 포괄적인 도구 문서는 다음을 참조하세요:",
+        "path": "docs/ai/ffmpeg-tools-guide.md",
+        "sections": {
+          "quickStart": "빠른 시작 - FFmpeg 도구를 사용하는 시기",
+          "coreConcepts": "핵심 개념 - 파일 경로, 서비스 확인, 응답 형식",
+          "toolReference": "도구 참조 - 모든 29개 도구의 매개변수 및 예제",
+          "scenarios": "사용 시나리오 - 일반적인 작업의 워크플로우",
+          "errorHandling": "오류 처리 - 문제 해결 가이드",
+          "performance": "성능 - 최적화 전략"
+        }
+      }
+    }
+  }
+}

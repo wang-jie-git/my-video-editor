@@ -1,0 +1,114 @@
+{
+  "ai": {
+    "ffmpeg": {
+      "title": "Công cụ xử lý video FFmpeg",
+      "whenToUse": {
+        "title": "Khi nào sử dụng công cụ FFmpeg",
+        "useFFmpeg": "Sử dụng công cụ FFmpeg khi người dùng yêu cầu:",
+        "useCases": [
+          "Chuyển đổi định dạng video (MP4, WebM, AVI, v.v.)",
+          "Hợp nhất hoặc chia tách video",
+          "Ghi chú hoặc phân tích phụ đề",
+          "Xử lý âm thanh (bộ cân bằng, bộ nén, hồi vang)",
+          "Bộ lọc video (làm mờ, làm sắc, chỉnh màu)",
+          "Điều chỉnh tốc độ hoặc đảo ngược video",
+          "Tạo hình thu nhỏ"
+        ],
+        "doNotUse": "KHÔNG sử dụng công cụ FFmpeg cho:",
+        "doNotUseCases": [
+          "Thêm phần tử vào timeline → sử dụng `add_element_to_timeline`",
+          "Cập nhật thuộc tính phần tử → sử dụng `update_element_properties`",
+          "Tạo hình ảnh/video với AI → sử dụng `generate_image` / `generate_video`"
+        ]
+      },
+      "concepts": {
+        "title": "Khái niệm cốt lõi",
+        "paths": {
+          "title": "Yêu cầu đường dẫn tuyệt đối",
+          "description": "Tất cả đường dẫn tệp PHẢI bắt đầu bằng `/` (ví dụ: `/video.mp4`)"
+        },
+        "services": {
+          "title": "Tình trạng dịch vụ",
+          "description": "Kiểm tra xem EditorCore và FFmpegService có sẵn không"
+        },
+        "response": {
+          "title": "Định dạng phản hồi thống nhất",
+          "description": "Tất cả công cụ trả về `{ success: boolean, message: string, data?: any }`"
+        },
+        "errorHandling": {
+          "title": "Xử lý lỗi",
+          "description": "Luôn xác thực tham số và xử lý lỗi một cách tinh tế"
+        }
+      },
+      "quickReference": {
+        "title": "Tài liệu tham khảo nhanh",
+        "categories": {
+          "basic": {
+            "name": "Cơ bản",
+            "tools": ["execute_ffmpeg_command", "get_ffmpeg_status", "check_file_exists"],
+            "useCases": "Thực thi lệnh, kiểm tra trạng thái, xác thực tệp"
+          },
+          "export": {
+            "name": "Xuất",
+            "tools": ["export_video", "get_video_info", "get_video_duration", "generate_thumbnail"],
+            "useCases": "Xuất timeline, lấy thông tin, tạo hình thu nhỏ"
+          },
+          "format": {
+            "name": "Định dạng",
+            "tools": ["convert_video_format", "batch_convert_format"],
+            "useCases": "Chuyển đổi giữa các định dạng (MP4/WebM/AVI)"
+          },
+          "filters": {
+            "name": "Bộ lọc",
+            "tools": ["apply_color_correction", "apply_blur", "apply_sharpen", "apply_lut", "apply_filter_chain", "adjust_video_speed", "reverse_video"],
+            "useCases": "Hiệu ứng hình ảnh và điều chỉnh"
+          },
+          "subtitles": {
+            "name": "Phụ đề",
+            "tools": ["parse_subtitles", "burn_subtitles", "add_subtitle_track", "translate_subtitles"],
+            "useCases": "Phân tích, ghi, thêm, dịch phụ đề"
+          },
+          "audio": {
+            "name": "Âm thanh",
+            "tools": ["apply_equalizer", "apply_compressor", "apply_reverb", "apply_audio_effects_chain", "normalize_audio"],
+            "useCases": "Xử lý và nâng cao âm thanh"
+          },
+          "mergeSplit": {
+            "name": "Hợp nhất/Chia tách",
+            "tools": ["merge_videos", "concat_with_transitions", "split_video", "trim_video"],
+            "useCases": "Kết hợp hoặc chia tách video"
+          }
+        }
+      },
+      "workflow": {
+        "title": "Quy trình làm việc chuẩn",
+        "steps": [
+          "Kiểm tra trạng thái FFmpeg",
+          "Xác thực file đầu vào tồn tại",
+          "Thực hiện thao tác",
+          "Báo cáo cho người dùng"
+        ]
+      },
+      "notes": {
+        "title": "Lưu ý quan trọng",
+        "longRunning": "Thao tác chạy lâu: Xử lý video có thể mất từ vài giây đến vài phút. Thông báo tiến độ cho người dùng.",
+        "qualityPresets": "Cài đặt chất lượng trước: Sử dụng `quality: \"high\"` cho xuất cuối, `\"low\"` cho xem trước",
+        "batchOperations": "Thao tác hàng loạt: Sử dụng `batch_convert_format` cho nhiều tệp",
+        "advancedUsers": "Người dùng nâng cao: `execute_ffmpeg_command` cung cấp kiểm soát FFmpeg đầy đủ nhưng yêu cầu kiến thức về FFmpeg CLI"
+      },
+      "documentation": {
+        "title": "Tài liệu chi tiết",
+        "reference": "Để biết tài liệu đầy đủ về công cụ với ví dụ, tham số và thực hành tốt nhất, hãy xem:",
+        "path": "docs/ai/ffmpeg-tools-guide.md",
+        "sections": {
+          "quickStart": "Bắt đầu nhanh - Khi nào sử dụng công cụ FFmpeg",
+          "coreConcepts": "Khái niệm cốt lõi - Đường dẫn tệp, kiểm tra dịch vụ, định dạng phản hồi",
+          "toolReference": "Tài liệu tham khảo công cụ - Tham số và ví dụ của tất cả 29 công cụ",
+          "scenarios": "Kịch bản sử dụng - Quy trình làm việc cho các tác vụ phổ biến",
+          "errorHandling": "Xử lý lỗi - Hướng dẫn khắc phục sự cố",
+          "performance": "Hiệu suất - Chiến lược tối ưu hóa"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "ai": {
+    "ffmpeg": {
+      "title": "FFmpeg 视频处理工具",
+      "whenToUse": {
+        "title": "何时使用 FFmpeg 工具",
+        "useFFmpeg": "当用户请求以下操作时使用 FFmpeg 工具：",
+        "useCases": [
+          "视频格式转换（MP4、WebM、AVI 等）",
+          "视频合并或分割",
+          "字幕烧录或解析",
+          "音频处理（均衡器、压缩器、混响）",
+          "视频滤镜（模糊、锐化、颜色校正）",
+          "视频速度调整或反转",
+          "缩略图生成"
+        ],
+        "doNotUse": "以下情况不要使用 FFmpeg 工具：",
+        "doNotUseCases": [
+          "在时间线上添加元素 → 使用 `add_element_to_timeline`",
+          "更新元素属性 → 使用 `update_element_properties`",
+          "使用 AI 生成图片/视频 → 使用 `generate_image` / `generate_video`"
+        ]
+      },
+      "concepts": {
+        "title": "核心概念",
+        "paths": {
+          "title": "需要绝对路径",
+          "description": "所有文件路径必须以 `/` 开头（例如 `/video.mp4`）"
+        },
+        "services": {
+          "title": "服务可用性",
+          "description": "检查 EditorCore 和 FFmpegService 是否可用"
+        },
+        "response": {
+          "title": "统一响应格式",
+          "description": "所有工具返回 `{ success: boolean, message: string, data?: any }`"
+        },
+        "errorHandling": {
+          "title": "错误处理",
+          "description": "始终验证参数并优雅地处理错误"
+        }
+      },
+      "quickReference": {
+        "title": "快速参考",
+        "categories": {
+          "basic": {
+            "name": "基础",
+            "tools": ["execute_ffmpeg_command", "get_ffmpeg_status", "check_file_exists"],
+            "useCases": "执行命令、检查状态、验证文件"
+          },
+          "export": {
+            "name": "导出",
+            "tools": ["export_video", "get_video_info", "get_video_duration", "generate_thumbnail"],
+            "useCases": "导出时间线、获取信息、生成缩略图"
+          },
+          "format": {
+            "name": "格式转换",
+            "tools": ["convert_video_format", "batch_convert_format"],
+            "useCases": "转换格式（MP4/WebM/AVI）"
+          },
+          "filters": {
+            "name": "滤镜",
+            "tools": ["apply_color_correction", "apply_blur", "apply_sharpen", "apply_lut", "apply_filter_chain", "adjust_video_speed", "reverse_video"],
+            "useCases": "视觉效果和调整"
+          },
+          "subtitles": {
+            "name": "字幕",
+            "tools": ["parse_subtitles", "burn_subtitles", "add_subtitle_track", "translate_subtitles"],
+            "useCases": "解析、烧录、添加、翻译字幕"
+          },
+          "audio": {
+            "name": "音频",
+            "tools": ["apply_equalizer", "apply_compressor", "apply_reverb", "apply_audio_effects_chain", "normalize_audio"],
+            "useCases": "音频处理和增强"
+          },
+          "mergeSplit": {
+            "name": "合并/分割",
+            "tools": ["merge_videos", "concat_with_transitions", "split_video", "trim_video"],
+            "useCases": "合并或分割视频"
+          }
+        }
+      },
+      "workflow": {
+        "title": "标准工作流",
+        "steps": [
+          "检查 FFmpeg 状态",
+          "验证输入文件存在",
+          "执行操作",
+          "向用户报告"
+        ]
+      },
+      "notes": {
+        "title": "重要注意事项",
+        "longRunning": "长时间运行的操作：视频处理可能需要几秒到几分钟。请告知用户进度。",
+        "qualityPresets": "质量预设：最终导出使用 `quality: \"high\"`，预览使用 `\"low\"`",
+        "batchOperations": "批量操作：多个文件使用 `batch_convert_format`",
+        "advancedUsers": "高级用户：`execute_ffmpeg_command` 提供完整的 FFmpeg 控制，但需要了解 FFmpeg 命令行"
+      },
+      "documentation": {
+        "title": "详细文档",
+        "reference": "有关包含示例、参数和最佳实践的完整工具文档，请参阅：",
+        "path": "docs/ai/ffmpeg-tools-guide.md",
+        "sections": {
+          "quickStart": "快速开始 - 何时使用 FFmpeg 工具",
+          "coreConcepts": "核心概念 - 文件路径、服务检查、响应格式",
+          "toolReference": "工具参考 - 所有 29 个工具的详细说明",
+          "scenarios": "使用场景 - 常见任务的工作流",
+          "errorHandling": "错误处理 - 故障排除指南",
+          "performance": "性能优化 - 优化策略"
+        }
+      }
+    }
+  }
+}
