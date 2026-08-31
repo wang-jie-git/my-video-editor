@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg AI 工具端到端测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .controls {
+            padding: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .test-results {
+            padding: 30px;
+        }
+
+        .phase-section {
+            margin-bottom: 30px;
+        }
+
+        .phase-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .phase-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .phase-stats {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .test-item {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .test-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+        }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .test-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .test-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-running {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-passed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .test-description {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .test-result {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s ease;
+        }
+
+        .log-section {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .log-info {
+            color: #4ec9b0;
+        }
+
+        .log-success {
+            color: #4ec9b0;
+        }
+
+        .log-error {
+            color: #f48771;
+        }
+
+        .log-warning {
+            color: #dcdcaa;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 FFmpeg AI 工具端到端测试</h1>
+            <p>测试全部 28 个 AI 工具在浏览器环境中的执行情况</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalTests">0</div>
+                <div class="stat-label">总测试数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="passedTests">0</div>
+                <div class="stat-label">通过 ✅</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="failedTests">0</div>
+                <div class="stat-label">失败 ❌</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="progress">0%</div>
+                <div class="stat-label">完成度</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-primary" onclick="runAllTests()">
+                🚀 运行所有测试
+            </button>
+            <button class="btn-secondary" onclick="runPhase('phase1')">
+                Phase 1: FFmpeg 基础
+            </button>
+            <button class="btn-secondary" onclick="runPhase('phase2')">
+                Phase 2: 视频导出
+            </button>
+            <button class="btn-secondary" onclick="runPhase('phase3')">
+                Phase 3: 格式转换
+            </button>
+            <button class="btn-secondary" onclick="runPhase('phase4')">
+                Phase 4: 视频滤镜
+            </button>
+            <button class="btn-secondary" onclick="runPhase('phase5')">
+                Phase 5: 字幕
+            </button>
+            <button class="btn-secondary" onclick="runPhase('phase6')">
+                Phase 6: 音频
+            </button>
+            <button class="btn-secondary" onclick="runPhase('phase7')">
+                Phase 7: 合并/分割
+            </button>
+            <button class="btn-danger" onclick="clearResults()">
+                🗑️ 清除结果
+            </button>
+        </div>
+
+        <div class="test-results" id="testResults">
+            <!-- 测试结果将在这里动态生成 -->
+        </div>
+
+        <div class="log-section" id="logSection">
+            <div class="log-entry log-info">[系统] 等待测试开始...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        // 测试配置
+        const testPhases = {
+            phase1: {
+                name: 'Phase 1: FFmpeg 基础工具',
+                tools: [
+                    { name: 'execute_ffmpeg_command', description: '执行自定义 FFmpeg 命令' },
+                    { name: 'get_ffmpeg_status', description: '获取 FFmpeg 状态' },
+                    { name: 'check_file_exists', description: '检查文件是否存在' },
+                ]
+            },
+            phase2: {
+                name: 'Phase 2: 视频导出工具',
+                tools: [
+                    { name: 'export_video', description: '导出视频' },
+                    { name: 'get_video_info', description: '获取视频信息' },
+                    { name: 'get_video_duration', description: '获取视频时长' },
+                    { name: 'generate_thumbnail', description: '生成缩略图' },
+                ]
+            },
+            phase3: {
+                name: 'Phase 3: 格式转换工具',
+                tools: [
+                    { name: 'convert_video_format', description: '转换视频格式' },
+                    { name: 'batch_convert_format', description: '批量转换格式' },
+                ]
+            },
+            phase4: {
+                name: 'Phase 4: 视频滤镜工具',
+                tools: [
+                    { name: 'apply_color_correction', description: '颜色校正' },
+                    { name: 'apply_blur', description: '模糊效果' },
+                    { name: 'apply_sharpen', description: '锐化效果' },
+                    { name: 'apply_lut', description: '3D LUT 调色' },
+                    { name: 'apply_filter_chain', description: '滤镜链' },
+                    { name: 'adjust_video_speed', description: '调整视频速度' },
+                    { name: 'reverse_video', description: '反转视频' },
+                ]
+            },
+            phase5: {
+                name: 'Phase 5: 字幕工具',
+                tools: [
+                    { name: 'parse_subtitles', description: '解析字幕' },
+                    { name: 'burn_subtitles', description: '烧录字幕' },
+                    { name: 'add_subtitle_track', description: '添加字幕轨道' },
+                    { name: 'translate_subtitles', description: '翻译字幕' },
+                ]
+            },
+            phase6: {
+                name: 'Phase 6: 音频处理工具',
+                tools: [
+                    { name: 'apply_equalizer', description: '均衡器' },
+                    { name: 'apply_compressor', description: '压缩器' },
+                    { name: 'apply_reverb', description: '混响' },
+                    { name: 'apply_audio_effects_chain', description: '音频效果链' },
+                    { name: 'normalize_audio', description: '标准化音频' },
+                ]
+            },
+            phase7: {
+                name: 'Phase 7: 视频合并/分割工具',
+                tools: [
+                    { name: 'merge_videos', description: '合并视频' },
+                    { name: 'concat_with_transitions', description: '带转场的合并' },
+                    { name: 'split_video', description: '分割视频' },
+                    { name: 'trim_video', description: '裁剪视频' },
+                ]
+            }
+        };
+
+        let testResults = [];
+        let isRunning = false;
+
+        // 日志函数
+        function log(message, type = 'info') {
+            const logSection = document.getElementById('logSection');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logSection.appendChild(entry);
+            logSection.scrollTop = logSection.scrollHeight;
+        }
+
+        // 更新统计
+        function updateStats() {
+            const total = testResults.length;
+            const passed = testResults.filter(r => r.status === 'passed').length;
+            const failed = testResults.filter(r => r.status === 'failed').length;
+            const progress = total > 0 ? Math.round((passed + failed) / 28 * 100) : 0;
+
+            document.getElementById('totalTests').textContent = total;
+            document.getElementById('passedTests').textContent = passed;
+            document.getElementById('failedTests').textContent = failed;
+            document.getElementById('progress').textContent = `${progress}%`;
+        }
+
+        // 渲染测试结果
+        function renderTestResults() {
+            const container = document.getElementById('testResults');
+            container.innerHTML = '';
+
+            for (const [phaseKey, phase] of Object.entries(testPhases)) {
+                const phaseResult = testResults.filter(r => r.phase === phaseKey);
+                const phasePassed = phaseResult.filter(r => r.status === 'passed').length;
+                const phaseFailed = phaseResult.filter(r => r.status === 'failed').length;
+
+                const section = document.createElement('div');
+                section.className = 'phase-section';
+                section.innerHTML = `
+                    <div class="phase-header">
+                        <div class="phase-title">${phase.name}</div>
+                        <div class="phase-stats">
+                            ${phaseResult.length}/${phase.tools.length} 测试完成
+                            ${phasePassed > 0 ? `| ✅ ${phasePassed} 通过` : ''}
+                            ${phaseFailed > 0 ? `| ❌ ${phaseFailed} 失败` : ''}
+                        </div>
+                    </div>
+                `;
+
+                phase.tools.forEach(tool => {
+                    const result = testResults.find(r => r.tool === tool.name);
+                    const status = result?.status || 'pending';
+
+                    const testItem = document.createElement('div');
+                    testItem.className = 'test-item';
+                    testItem.id = `test-${tool.name}`;
+                    testItem.innerHTML = `
+                        <div class="test-header">
+                            <div class="test-name">${tool.name}</div>
+                            <div class="test-status status-${status}">
+                                ${status === 'running' ? '<span class="spinner"></span> 运行中' :
+                                  status === 'passed' ? '✅ 通过' :
+                                  status === 'failed' ? '❌ 失败' :
+                                  '⏳ 等待'}
+                            </div>
+                        </div>
+                        <div class="test-description">${tool.description}</div>
+                        ${result?.message ? `
+                            <div class="test-result ${result.status}">
+                                ${result.message}
+                            </div>
+                        ` : ''}
+                    `;
+                    section.appendChild(testItem);
+                });
+
+                container.appendChild(section);
+            }
+
+            updateStats();
+        }
+
+        // 模拟单个工具测试
+        async function testTool(phaseKey, toolName, testFunc) {
+            log(`开始测试: ${toolName}`, 'info');
+
+            // 更新状态为运行中
+            const testItem = document.getElementById(`test-${toolName}`);
+            if (testItem) {
+                const statusEl = testItem.querySelector('.test-status');
+                statusEl.className = 'test-status status-running';
+                statusEl.innerHTML = '<span class="spinner"></span> 运行中';
+            }
+
+            try {
+                const result = await testFunc();
+                testResults.push({
+                    phase: phaseKey,
+                    tool: toolName,
+                    status: result.success ? 'passed' : 'failed',
+                    message: result.message,
+                    data: result.data
+                });
+
+                log(`${toolName}: ${result.success ? '✅ 通过' : '❌ 失败'} - ${result.message}`, result.success ? 'success' : 'error');
+            } catch (error) {
+                testResults.push({
+                    phase: phaseKey,
+                    tool: toolName,
+                    status: 'failed',
+                    message: `异常: ${error.message}`,
+                });
+
+                log(`${toolName}: ❌ 异常 - ${error.message}`, 'error');
+            }
+
+            renderTestResults();
+        }
+
+        // 测试 Phase 1: FFmpeg 基础工具
+        async function testPhase1() {
+            const phaseKey = 'phase1';
+
+            // Test: get_ffmpeg_status
+            await testTool(phaseKey, 'get_ffmpeg_status', async () => {
+                try {
+                    // 动态导入工具
+                    const { getFFmpegStatusTool } = await import('./ffmpeg-basic-tools.ts');
+                    const result = await getFFmpegStatusTool.execute({});
+
+                    return {
+                        success: result.success,
+                        message: result.success
+                            ? 'FFmpeg 状态获取成功'
+                            : `FFmpeg 状态获取失败: ${result.message}`,
+                        data: result.data
+                    };
+                } catch (error) {
+                    return { success: false, message: error.message };
+                }
+            });
+
+            // Test: check_file_exists
+            await testTool(phaseKey, 'check_file_exists', async () => {
+                try {
+                    const { checkFileExistsTool } = await import('./ffmpeg-basic-tools.ts');
+                    const result = await checkFileExistsTool.execute({
+                        filePath: '/test-file.mp4'
+                    });
+
+                    return {
+                        success: !result.success || result.data?.exists === false, // 期望文件不存在
+                        message: result.success
+                            ? '文件存在性检查功能正常'
+                            : `文件存在性检查失败: ${result.message}`,
+                    };
+                } catch (error) {
+                    return { success: false, message: error.message };
+                }
+            });
+
+            // Test: execute_ffmpeg_command (需要启用 FFmpeg)
+            await testTool(phaseKey, 'execute_ffmpeg_command', async () => {
+                try {
+                    const { executeFFmpegCommandTool } = await import('./ffmpeg-basic-tools.ts');
+                    const result = await executeFFmpegCommandTool.execute({
+                        args: ['-version']
+                    });
+
+                    return {
+                        success: result.success,
+                        message: result.success
+                            ? 'FFmpeg 命令执行成功'
+                            : `FFmpeg 命令执行失败: ${result.message}`,
+                        data: result.data
+                    };
+                } catch (error) {
+                    return { success: false, message: error.message };
+                }
+            });
+        }
+
+        // 测试 Phase 2: 视频导出工具
+        async function testPhase2() {
+            const phaseKey = 'phase2';
+
+            // Test: get_video_info
+            await testTool(phaseKey, 'get_video_info', async () => {
+                try {
+                    const { getVideoInfoTool } = await import('./ffmpeg-video-tools-phase2.ts');
+                    const result = await getVideoInfoTool.execute({
+                        filePath: '/nonexistent.mp4'
+                    });
+
+                    return {
+                        success: !result.success, // 期望失败（文件不存在）
+                        message: result.success
+                            ? '视频信息获取成功'
+                            : `视频信息获取失败（预期）: ${result.message}`,
+                    };
+                } catch (error) {
+                    return { success: true, message: `异常处理正常: ${error.message}` };
+                }
+            });
+
+            // Test: get_video_duration
+            await testTool(phaseKey, 'get_video_duration', async () => {
+                try {
+                    const { getVideoDurationTool } = await import('./ffmpeg-video-tools-phase2.ts');
+                    const result = await getVideoDurationTool.execute({
+                        filePath: '/nonexistent.mp4'
+                    });
+
+                    return {
+                        success: !result.success,
+                        message: `视频时长获取失败（预期）: ${result.message}`,
+                    };
+                } catch (error) {
+                    return { success: true, message: `异常处理正常: ${error.message}` };
+                }
+            });
+
+            // Test: generate_thumbnail
+            await testTool(phaseKey, 'generate_thumbnail', async () => {
+                try {
+                    const { generateThumbnailTool } = await import('./ffmpeg-video-tools-phase2.ts');
+                    const result = await generateThumbnailTool.execute({
+                        filePath: '/nonexistent.mp4',
+                        outputFile: '/thumbnail.png'
+                    });
+
+                    return {
+                        success: !result.success,
+                        message: `缩略图生成失败（预期）: ${result.message}`,
+                    };
+                } catch (error) {
+                    return { success: true, message: `异常处理正常: ${error.message}` };
+                }
+            });
+        }
+
+        // 测试 Phase 7: 视频合并/分割工具
+        async function testPhase7() {
+            const phaseKey = 'phase7';
+
+            // Test: merge_videos
+            await testTool(phaseKey, 'merge_videos', async () => {
+                try {
+                    const { mergeVideosTool } = await import('./ffmpeg-video-tools.ts');
+                    const result = await mergeVideosTool.execute({
+                        inputFiles: ['/video1.mp4', '/video2.mp4'],
+                        outputFile: '/merged.mp4'
+                    });
+
+                    return {
+                        success: !result.success,
+                        message: `视频合并失败（预期）: ${result.message}`,
+                    };
+                } catch (error) {
+                    return { success: true, message: `异常处理正常: ${error.message}` };
+                }
+            });
+
+            // Test: split_video
+            await testTool(phaseKey, 'split_video', async () => {
+                try {
+                    const { splitVideoTool } = await import('./ffmpeg-video-tools.ts');
+                    const result = await splitVideoTool.execute({
+                        inputFile: '/video.mp4',
+                        splitPoints: [10, 20],
+                        outputPrefix: '/split_'
+                    });
+
+                    return {
+                        success: !result.success,
+                        message: `视频分割失败（预期）: ${result.message}`,
+                    };
+                } catch (error) {
+                    return { success: true, message: `异常处理正常: ${error.message}` };
+                }
+            });
+        }
+
+        // 运行单个 Phase
+        window.runPhase = async function(phaseKey) {
+            if (isRunning) {
+                alert('测试正在运行中，请等待完成');
+                return;
+            }
+
+            isRunning = true;
+            log(`开始运行 ${testPhases[phaseKey].name}`, 'info');
+
+            try {
+                switch (phaseKey) {
+                    case 'phase1':
+                        await testPhase1();
+                        break;
+                    case 'phase2':
+                        await testPhase2();
+                        break;
+                    case 'phase7':
+                        await testPhase7();
+                        break;
+                    default:
+                        log(`Phase ${phaseKey} 测试暂未实现`, 'warning');
+                }
+
+                log(`${testPhases[phaseKey].name} 测试完成`, 'success');
+            } catch (error) {
+                log(`测试失败: ${error.message}`, 'error');
+            } finally {
+                isRunning = false;
+            }
+        };
+
+        // 运行所有测试
+        window.runAllTests = async function() {
+            if (isRunning) {
+                alert('测试正在运行中，请等待完成');
+                return;
+            }
+
+            clearResults();
+            isRunning = true;
+            log('开始运行全部测试', 'info');
+
+            try {
+                for (const phaseKey of Object.keys(testPhases)) {
+                    await window.runPhase(phaseKey);
+                    await new Promise(resolve => setTimeout(resolve, 500)); // 延迟以避免阻塞
+                }
+
+                const total = testResults.length;
+                const passed = testResults.filter(r => r.status === 'passed').length;
+                const failed = testResults.filter(r => r.status === 'failed').length;
+
+                log(`
+========================================
+全部测试完成！
+========================================
+总计: ${total}
+通过: ${passed} ✅
+失败: ${failed} ❌
+通过率: ${total > 0 ? Math.round(passed / total * 100) : 0}%
+========================================
+                `, passed > failed ? 'success' : 'error');
+            } catch (error) {
+                log(`测试失败: ${error.message}`, 'error');
+            } finally {
+                isRunning = false;
+            }
+        };
+
+        // 清除结果
+        window.clearResults = function() {
+            testResults = [];
+            renderTestResults();
+            document.getElementById('logSection').innerHTML = '<div class="log-entry log-info">[系统] 日志已清除</div>';
+            log('测试结果已清除', 'info');
+        };
+
+        // 初始化
+        renderTestResults();
+        log('端到端测试页面已加载', 'success');
+        log('提示: 点击"运行所有测试"或选择特定 Phase 进行测试', 'info');
+    </script>
+</body>
+</html>

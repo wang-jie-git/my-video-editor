@@ -58,7 +58,7 @@ Quick presets:
 				type: "array",
 				items: {
 					type: "object",
-					properties": {
+					properties: {
 						frequency: { type: "number" },
 						gain: { type: "number" },
 					},
