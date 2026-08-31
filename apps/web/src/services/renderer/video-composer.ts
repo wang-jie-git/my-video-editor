@@ -92,12 +92,42 @@ export class VideoComposer {
 
     try {
       // 验证输入
-      if (inputFiles.length === 0) {
+      if (!inputFiles || inputFiles.length === 0) {
         return { success: false, error: '输入文件列表为空' }
       }
 
       if (inputFiles.length === 1) {
         return { success: false, error: '至少需要 2 个视频文件才能合并' }
+      }
+
+      // 验证输出文件名
+      if (!outputFile || outputFile.trim() === '') {
+        return { success: false, error: '输出文件名不能为空' }
+      }
+
+      // 验证输入文件是否存在（通过检查文件名格式）
+      for (const file of inputFiles) {
+        if (!file || file.trim() === '') {
+          return { success: false, error: '输入文件名不能为空' }
+        }
+
+        // 检查文件扩展名
+        const ext = file.split('.').pop()?.toLowerCase()
+        if (!ext || !['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) {
+          return {
+            success: false,
+            error: `不支持的文件格式: ${file}，支持的格式: mp4, webm, mov, avi, mkv`,
+          }
+        }
+      }
+
+      // 检查输出文件扩展名
+      const outputExt = outputFile.split('.').pop()?.toLowerCase()
+      if (!outputExt || !['mp4', 'webm'].includes(outputExt)) {
+        return {
+          success: false,
+          error: `不支持的输出格式: ${outputExt}，支持的格式: mp4, webm`,
+        }
       }
 
       onProgress?.({
@@ -107,6 +137,12 @@ export class VideoComposer {
         total: inputFiles.length,
       })
 
+      // 如果是流复制模式，需要先写入文件列表
+      if (!reencode) {
+        const listFile = this.generateFileList(inputFiles)
+        await this.ffmpegService.writeFile('filelist.txt', new TextEncoder().encode(listFile))
+      }
+
       // 构建 FFmpeg 命令
       const args = this.buildMergeArgs({
         inputFiles,
@@ -114,12 +150,6 @@ export class VideoComposer {
         includeAudio,
         reencode,
       })
-
-      // 如果是流复制模式，需要先写入文件列表
-      if (!reencode) {
-        const listFile = this.generateFileList(inputFiles)
-        await this.ffmpegService.writeFile('filelist.txt', new TextEncoder().encode(listFile))
-      }
 
       // 执行合并
       await this.ffmpegService.exec(args, {
@@ -297,13 +327,25 @@ export class VideoComposer {
 
     try {
       // 验证输入
-      if (splitPoints.length === 0) {
+      if (!inputFile || inputFile.trim() === '') {
+        return { success: false, error: '输入文件名不能为空' }
+      }
+
+      if (!splitPoints || splitPoints.length === 0) {
         return { success: false, error: '分割点列表为空' }
       }
 
-      // 验证分割点（必须按升序排列）
-      for (let i = 1; i < splitPoints.length; i++) {
-        if (splitPoints[i] <= splitPoints[i - 1]) {
+      if (!outputPrefix || outputPrefix.trim() === '') {
+        return { success: false, error: '输出文件前缀不能为空' }
+      }
+
+      // 验证分割点（必须按升序排列且为正数）
+      for (let i = 0; i < splitPoints.length; i++) {
+        if (splitPoints[i] <= 0) {
+          return { success: false, error: `分割点必须大于 0，收到: ${splitPoints[i]}` }
+        }
+
+        if (i > 0 && splitPoints[i] <= splitPoints[i - 1]) {
           return { success: false, error: '分割点必须按升序排列' }
         }
       }
@@ -315,8 +357,8 @@ export class VideoComposer {
         total: splitPoints.length + 1,
       })
 
-      // 计算时间片段
-      const segments = this.calculateSegments(inputFile, splitPoints)
+      // 计算时间片段（包含验证）
+      const segments = await this.calculateSegments(inputFile, splitPoints)
 
       // 逐个分割
       const outputFiles: string[] = []
@@ -401,12 +443,33 @@ export class VideoComposer {
 
     try {
       // 验证输入
+      if (!inputFile || inputFile.trim() === '') {
+        return { success: false, error: '输入文件名不能为空' }
+      }
+
+      if (!outputFile || outputFile.trim() === '') {
+        return { success: false, error: '输出文件名不能为空' }
+      }
+
+      if (typeof startTime !== 'number' || isNaN(startTime)) {
+        return { success: false, error: '开始时间必须是一个有效的数字' }
+      }
+
+      if (typeof endTime !== 'number' || isNaN(endTime)) {
+        return { success: false, error: '结束时间必须是一个有效的数字' }
+      }
+
       if (startTime < 0) {
         return { success: false, error: '开始时间不能为负数' }
       }
 
       if (endTime <= startTime) {
         return { success: false, error: '结束时间必须大于开始时间' }
+      }
+
+      // 检查时间差是否太小（小于 0.1 秒）
+      if (endTime - startTime < 0.1) {
+        return { success: false, error: '裁剪时长不能小于 0.1 秒' }
       }
 
       onProgress?.({
@@ -661,10 +724,13 @@ export class VideoComposer {
    * @param splitPoints 分割点列表（秒）
    * @returns 时间片段列表
    */
-  private calculateSegments(inputFile: string, splitPoints: number[]): TimeSegment[] {
-    // TODO: 从 FFmpeg 获取视频实际时长
-    // 这里暂时假设视频时长为 60 秒
-    const totalDuration = 60
+  private async calculateSegments(inputFile: string, splitPoints: number[]): Promise<TimeSegment[]> {
+    // 获取视频实际时长
+    const totalDuration = await this.getVideoDuration(inputFile)
+
+    if (totalDuration <= 0) {
+      throw new Error('无法获取视频时长')
+    }
 
     const segments: TimeSegment[] = []
     let startTime = 0
@@ -710,12 +776,29 @@ export class VideoComposer {
    */
   async getVideoDuration(inputFile: string): Promise<number> {
     try {
-      // 使用 ffprobe 获取视频信息
-      const args = ['-i', inputFile]
+      // 使用 FFprobe 获取视频信息
+      // FFprobe 命令：获取视频时长
+      const args = [
+        '-v',
+        'error',
+        '-show_entries',
+        'format=duration',
+        '-of',
+        'default=noprint_wrappers=1:nokey=1',
+        inputFile,
+      ]
 
-      // TODO: 实现 ffprobe 集成
-      // 这里暂时返回默认值
-      return 60
+      // 执行 FFprobe 命令
+      const result = await this.ffmpegService.exec(args)
+
+      // 解析输出（秒）
+      const duration = parseFloat(result.stdout.trim())
+
+      if (isNaN(duration) || duration <= 0) {
+        throw new Error(`无法获取视频时长: ${result.stdout}`)
+      }
+
+      return duration
     } catch (error) {
       console.error('[VideoComposer] 获取视频时长失败:', error)
       return 0
@@ -730,18 +813,47 @@ export class VideoComposer {
    */
   async getVideoInfo(inputFile: string): Promise<VideoInfo | null> {
     try {
-      // TODO: 实现 ffprobe 集成
-      // 这里返回默认值
+      // 使用 FFprobe 获取视频信息
+      const args = [
+        '-v',
+        'error',
+        '-select_streams',
+        'v:0',
+        '-show_entries',
+        'stream=width,height,r_frame_rate,codec_name',
+        '-show_entries',
+        'format=duration,size',
+        '-of',
+        'json',
+        inputFile,
+      ]
+
+      const result = await this.ffmpegService.exec(args)
+
+      // 解析 JSON 输出
+      const info = JSON.parse(result.stdout)
+
+      const videoStream = info.streams?.[0]
+      const format = info.format
+
+      if (!videoStream || !format) {
+        throw new Error('无法解析视频信息')
+      }
+
+      // 解析帧率（例如 "30/1" → 30）
+      const fpsParts = videoStream.r_frame_rate?.split('/') || ['30', '1']
+      const fps = parseInt(fpsParts[0]) / parseInt(fpsParts[1])
+
       return {
         fileName: inputFile,
-        duration: 60,
-        width: 1920,
-        height: 1080,
-        fps: 30,
-        size: 0,
-        hasAudio: true,
-        videoCodec: 'h264',
-        audioCodec: 'aac',
+        duration: parseFloat(format.duration || '0'),
+        width: videoStream.width || 0,
+        height: videoStream.height || 0,
+        fps: isNaN(fps) ? 30 : fps,
+        size: parseInt(format.size || '0'),
+        hasAudio: true, // TODO: 检查音频流
+        videoCodec: videoStream.codec_name,
+        audioCodec: 'aac', // TODO: 从音频流获取
       }
     } catch (error) {
       console.error('[VideoComposer] 获取视频信息失败:', error)

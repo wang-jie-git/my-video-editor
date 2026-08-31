@@ -9,23 +9,63 @@ import { VideoComposer } from '../video-composer'
 import { FFmpegService } from '../ffmpeg/ffmpeg-service'
 
 // Mock FFmpegService
-vi.mock('../ffmpeg/ffmpeg-service', () => ({
-  FFmpegService: vi.fn().mockImplementation(() => ({
-    isLoaded: vi.fn().mockReturnValue(true),
-    load: vi.fn().mockResolvedValue(undefined),
-    exec: vi.fn().mockResolvedValue({
+vi.mock('../ffmpeg/ffmpeg-service', () => {
+  const mockExec = vi.fn().mockImplementation((args: string[]) => {
+    // getVideoDuration 的 FFprobe 命令
+    if (args.includes('-show_entries') && args.includes('format=duration')) {
+      return Promise.resolve({
+        stdout: '120.5', // 模拟 120.5 秒的视频
+        stderr: '',
+        exitCode: 0,
+        duration: 100,
+      })
+    }
+
+    // getVideoInfo 的 FFprobe 命令
+    if (args.includes('-show_entries') && args.includes('json')) {
+      return Promise.resolve({
+        stdout: JSON.stringify({
+          streams: [
+            {
+              width: 1920,
+              height: 1080,
+              r_frame_rate: '30/1',
+              codec_name: 'h264',
+            },
+          ],
+          format: {
+            duration: '120.5',
+            size: '104857600', // 100MB
+          },
+        }),
+        stderr: '',
+        exitCode: 0,
+        duration: 100,
+      })
+    }
+
+    // 默认返回
+    return Promise.resolve({
       stdout: '',
       stderr: '',
       exitCode: 0,
       duration: 100,
-    }),
-    writeFile: vi.fn().mockResolvedValue(undefined),
-    readFile: vi.fn().mockResolvedValue(new Uint8Array(1024 * 1024)), // 1MB
-    deleteFile: vi.fn().mockResolvedValue(undefined),
-    listDir: vi.fn().mockResolvedValue([]),
-    cleanup: vi.fn().mockResolvedValue(undefined),
-  })),
-}))
+    })
+  })
+
+  return {
+    FFmpegService: vi.fn().mockImplementation(() => ({
+      isLoaded: vi.fn().mockReturnValue(true),
+      load: vi.fn().mockResolvedValue(undefined),
+      exec: mockExec,
+      writeFile: vi.fn().mockResolvedValue(undefined),
+      readFile: vi.fn().mockResolvedValue(new Uint8Array(1024 * 1024)), // 1MB
+      deleteFile: vi.fn().mockResolvedValue(undefined),
+      listDir: vi.fn().mockResolvedValue([]),
+      cleanup: vi.fn().mockResolvedValue(undefined),
+    })),
+  }
+})
 
 describe('VideoComposer', () => {
   let composer: VideoComposer
