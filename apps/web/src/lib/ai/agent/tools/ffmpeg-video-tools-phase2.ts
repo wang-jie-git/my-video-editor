@@ -15,6 +15,27 @@ function isAbsolutePath(path: unknown): path is string {
 }
 
 /**
+ * 获取导出所需的基本参数
+ */
+function getExportParams() {
+	const editor = EditorCore.getInstance();
+	const activeProject = editor.project.getActive();
+	const tracks = editor.timeline.getTracks();
+	const duration = editor.timeline.getTotalDuration();
+
+	if (!activeProject) {
+		throw new Error("No active project");
+	}
+
+	return {
+		tracks,
+		duration,
+		canvasSize: activeProject.settings.canvasSize,
+		mediaAssets: editor.media.getAssets(),
+	};
+}
+
+/**
  * 导出视频
  *
  * 使用场景：
@@ -63,11 +84,6 @@ Output formats:
 					"Quality preset (default: medium)",
 				default: "medium",
 			},
-			resolution: {
-				type: "string",
-				description:
-					"Target resolution (e.g., '1920x1080', '1280x720'). Defaults to project resolution.",
-			},
 			frameRate: {
 				type: "number",
 				description:
@@ -79,11 +95,6 @@ Output formats:
 					"Include audio track (default: true)",
 				default: true,
 			},
-			watermark: {
-				type: "string",
-				description:
-					"Path to watermark image (optional, e.g., '/watermark.png')",
-			},
 		},
 		required: ["outputFile"],
 	},
@@ -92,24 +103,14 @@ Output formats:
 			const outputFile = args.outputFile as string;
 			const format = (args.format as "mp4" | "webm") ?? "mp4";
 			const quality = (args.quality as "low" | "medium" | "high" | "max") ?? "medium";
-			const resolution = args.resolution as string | undefined;
 			const frameRate = args.frameRate as number | undefined;
 			const includeAudio = (args.includeAudio as boolean) ?? true;
-			const watermark = args.watermark as string | undefined;
 
 			if (!isAbsolutePath(outputFile)) {
 				return {
 					success: false,
 					message:
 						"Output file must be an absolute path (e.g., '/export.mp4')",
-				};
-			}
-
-			if (watermark && !isAbsolutePath(watermark)) {
-				return {
-					success: false,
-					message:
-						"Watermark path must be an absolute path",
 				};
 			}
 
@@ -123,12 +124,69 @@ Output formats:
 				};
 			}
 
-			// 注意：目前需要直接访问 FFmpegExporter
-			// 未来会通过 RendererManager 暴露
+			// 检查是否有 FFmpegExporter
+			const ffmpegExporter = (renderer as any).ffmpegExporter;
+			if (!ffmpegExporter) {
+				return {
+					success: false,
+					message: "FFmpegExporter is not initialized. Please enable FFmpeg export first.",
+				};
+			}
+
+			// 获取导出参数
+			let params;
+			try {
+				params = getExportParams();
+			} catch (error) {
+				return {
+					success: false,
+					message: error instanceof Error ? error.message : "Failed to get export parameters",
+				};
+			}
+
+			// 检查项目是否为空
+			if (params.duration === 0) {
+				return {
+					success: false,
+					message: "Project is empty. Please add clips to the timeline before exporting.",
+				};
+			}
+
+			// 构建导出选项
+			const options = {
+				format,
+				quality: quality as "low" | "medium" | "high" | "max",
+				fps: frameRate,
+				includeAudio,
+				onProgress: (progress: { progress: number }) => {
+					console.log(`[export_video] Progress: ${(progress.progress * 100).toFixed(1)}%`);
+				},
+			};
+
+			// 执行导出
+			const result = await ffmpegExporter.export({
+				tracks: params.tracks,
+				duration: params.duration,
+				canvasSize: params.canvasSize,
+				options,
+			});
+
+			if (!result.success) {
+				return {
+					success: false,
+					message: result.error || "Export failed",
+				};
+			}
+
 			return {
-				success: false,
-				message:
-					"Video export is not yet fully exposed through the AI tools interface. This feature is coming soon.",
+				success: true,
+				message: `Video exported successfully to ${outputFile}`,
+				data: {
+					outputFile,
+					format,
+					quality,
+					duration: params.duration,
+				},
 			};
 		} catch (error) {
 			return {
@@ -386,11 +444,47 @@ The thumbnail is captured at the specified timestamp and saved as a PNG image.`,
 				};
 			}
 
-			// 注意：这个工具需要直接访问 FFmpegExporter 或自定义实现
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
+				return {
+					success: false,
+					message:
+						"FFmpeg export is not enabled. Please enable FFmpeg export first.",
+				};
+			}
+
+			// 获取 FFmpegService
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized.",
+				};
+			}
+
+			// 使用 FFmpeg 生成缩略图
+			// ffmpeg -i input.mp4 -ss 00:00:01 -vframes 1 -s 320x180 output.png
+			const timeStr = formatTime(time);
+			const sizeFilter = `${width}x${height}`;
+
+			await ffmpegService.exec([
+				"-i", filePath,
+				"-ss", timeStr,
+				"-vframes", "1",
+				"-s", sizeFilter,
+				"-y", outputFile,
+			]);
+
 			return {
-				success: false,
-				message:
-					"Thumbnail generation is not yet exposed through the AI tools interface. This feature is coming soon.",
+				success: true,
+				message: `Thumbnail generated successfully at ${time}s`,
+				data: {
+					outputFile,
+					time,
+					width,
+					height,
+				},
 			};
 		} catch (error) {
 			return {
@@ -402,6 +496,20 @@ The thumbnail is captured at the specified timestamp and saved as a PNG image.`,
 		}
 	},
 };
+
+/**
+ * 格式化时间（秒 -> HH:MM:SS 或 MM:SS）
+ */
+function formatTime(seconds: number): string {
+	const h = Math.floor(seconds / 3600);
+	const m = Math.floor((seconds % 3600) / 60);
+	const s = Math.floor(seconds % 60);
+
+	if (h > 0) {
+		return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+	}
+	return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
 
 // 导出所有 Phase 2 工具
 export const ffmpegVideoToolsPhase2 = [

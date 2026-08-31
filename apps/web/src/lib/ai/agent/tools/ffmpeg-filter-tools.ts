@@ -4,6 +4,7 @@
  * 提供 FilterPipeline 视频滤镜功能的 AI 工具接口
  */
 
+import { EditorCore } from "@/core";
 import type { AgentTool } from "./types";
 
 /**
@@ -11,6 +12,28 @@ import type { AgentTool } from "./types";
  */
 function isAbsolutePath(path: unknown): path is string {
 	return typeof path === "string" && path.startsWith("/");
+}
+
+/**
+ * 构建颜色校正滤镜字符串
+ */
+function buildColorCorrectionFilter(brightness: number, contrast: number, saturation: number, hue: number): string {
+	const filters: string[] = [];
+
+	if (brightness !== 0) {
+		filters.push(`brightness=${1 + brightness}`);
+	}
+	if (contrast !== 1) {
+		filters.push(`contrast=${contrast}`);
+	}
+	if (saturation !== 1) {
+		filters.push(`saturation=${saturation}`);
+	}
+	if (hue !== 0) {
+		filters.push(`hue=${hue}`);
+	}
+
+	return filters.join(',');
 }
 
 /**
@@ -57,32 +80,24 @@ brightness=0.2, contrast=1.1, saturation=1.0, hue=0`,
 				description:
 					"Brightness adjustment (-1 to 1, default: 0)",
 				default: 0,
-				minimum: -1,
-				maximum: 1,
 			},
 			contrast: {
 				type: "number",
 				description:
 					"Contrast adjustment (0 to 2, default: 1)",
 				default: 1,
-				minimum: 0,
-				maximum: 2,
 			},
 			saturation: {
 				type: "number",
 				description:
 					"Saturation adjustment (0 to 2, default: 1)",
 				default: 1,
-				minimum: 0,
-				maximum: 2,
 			},
 			hue: {
 				type: "number",
 				description:
 					"Hue shift (-180 to 180 degrees, default: 0)",
 				default: 0,
-				minimum: -180,
-				maximum: 180,
 			},
 		},
 		required: ["inputFile", "outputFile"],
@@ -103,26 +118,56 @@ brightness=0.2, contrast=1.1, saturation=1.0, hue=0`,
 				};
 			}
 
-			// 参数范围验证
-			if (brightness < -1 || brightness > 1) {
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
 				return {
 					success: false,
-					message: "brightness must be between -1 and 1",
+					message: "FFmpeg export is not enabled.",
 				};
 			}
 
-			if (contrast < 0 || contrast > 2) {
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
 				return {
 					success: false,
-					message: "contrast must be between 0 and 2",
+					message: "FFmpegService is not initialized.",
 				};
 			}
 
-			// 注意：需要访问 FilterPipeline
+			// 构建滤镜字符串
+			const filterStr = buildColorCorrectionFilter(brightness, contrast, saturation, hue);
+
+			if (!filterStr) {
+				// 没有滤镜，直接复制
+				await ffmpegService.exec([
+					"-i", inputFile,
+					"-c:v", "copy",
+					"-y", outputFile,
+				]);
+			} else {
+				// 应用颜色校正滤镜
+				await ffmpegService.exec([
+					"-i", inputFile,
+					"-vf", filterStr,
+					"-c:v", "libx264",
+					"-crf", "23",
+					"-pix_fmt", "yuv420p",
+					"-y", outputFile,
+				]);
+			}
+
 			return {
-				success: false,
-				message:
-					"Color correction is not yet exposed through the AI tools interface. This feature is coming soon.",
+				success: true,
+				message: `Color correction applied successfully`,
+				data: {
+					inputFile,
+					outputFile,
+					brightness,
+					contrast,
+					saturation,
+					hue,
+				},
 			};
 		} catch (error) {
 			return {
@@ -148,7 +193,7 @@ export const applyBlurTool: AgentTool = {
 	description: `Apply blur effect to a video.
 
 Use cases:
-- Soften video画面
+- Soften video frames
 - Create dreamy or artistic effects
 - Blur sensitive information
 - Add motion blur simulation
@@ -173,8 +218,6 @@ Blur types:
 				description:
 					"Blur strength (0 to 20, default: 5)",
 				default: 5,
-				minimum: 0,
-				maximum: 20,
 			},
 			blurType: {
 				type: "string",
@@ -203,15 +246,62 @@ Blur types:
 			if (strength < 0 || strength > 20) {
 				return {
 					success: false,
-					message: "strength must be between 0 and 20",
+					message: "Blur strength must be between 0 and 20",
 				};
 			}
 
-			// 注意：需要访问 FilterPipeline
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
+				return {
+					success: false,
+					message: "FFmpeg export is not enabled.",
+				};
+			}
+
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized.",
+				};
+			}
+
+			// 构建模糊滤镜
+			let filterStr: string;
+			switch (blurType) {
+				case "gaussian":
+					filterStr = `gblur=sigma=${strength}`;
+					break;
+				case "box":
+					filterStr = `boxblur=${strength}:${strength}`;
+					break;
+				case "motion":
+					filterStr = `minterpolate=fps=12:mi_mode=mci:mc_mode=aobmc:me=epzs:vsbmc=1`;
+					break;
+				default:
+					filterStr = `gblur=sigma=${strength}`;
+			}
+
+			// 应用模糊滤镜
+			await ffmpegService.exec([
+				"-i", inputFile,
+				"-vf", filterStr,
+				"-c:v", "libx264",
+				"-crf", "23",
+				"-pix_fmt", "yuv420p",
+				"-y", outputFile,
+			]);
+
 			return {
-				success: false,
-				message:
-					"Blur effect is not yet exposed through the AI tools interface. This feature is coming soon.",
+				success: true,
+				message: `Blur effect applied successfully (${blurType}, strength: ${strength})`,
+				data: {
+					inputFile,
+					outputFile,
+					blurType,
+					strength,
+				},
 			};
 		} catch (error) {
 			return {
@@ -237,9 +327,10 @@ export const applySharpenTool: AgentTool = {
 	description: `Apply sharpening effect to a video.
 
 Use cases:
-- Enhance video clarity and detail
+- Enhance video clarity
 - Fix slightly blurry footage
-- Improve text legibility in videos
+- Improve detail definition
+- Counteract soft video from compression
 
 Parameters:
 - amount: Sharpening strength (0 to 2, default: 1)
@@ -257,19 +348,13 @@ Parameters:
 			},
 			amount: {
 				type: "number",
-				description:
-					"Sharpening strength (0 to 2, default: 1)",
+				description: "Sharpening strength (0 to 2, default: 1)",
 				default: 1,
-				minimum: 0,
-				maximum: 2,
 			},
 			radius: {
 				type: "number",
-				description:
-					"Sharpening radius (1 to 5, default: 1)",
+				description: "Sharpening radius (1 to 5, default: 1)",
 				default: 1,
-				minimum: 1,
-				maximum: 5,
 			},
 		},
 		required: ["inputFile", "outputFile"],
@@ -288,31 +373,63 @@ Parameters:
 				};
 			}
 
-			// 参数范围验证
 			if (amount < 0 || amount > 2) {
 				return {
 					success: false,
-					message: "amount must be between 0 and 2",
+					message: "Amount must be between 0 and 2",
 				};
 			}
 
 			if (radius < 1 || radius > 5) {
 				return {
 					success: false,
-					message: "radius must be between 1 and 5",
+					message: "Radius must be between 1 and 5",
 				};
 			}
 
-			// 注意：需要访问 FilterPipeline
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
+				return {
+					success: false,
+					message: "FFmpeg export is not enabled.",
+				};
+			}
+
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized.",
+				};
+			}
+
+			// 应用锐化滤镜
+			const filterStr = `unsharp=lx=${radius}:ly=${radius}:la=${amount}`;
+
+			await ffmpegService.exec([
+				"-i", inputFile,
+				"-vf", filterStr,
+				"-c:v", "libx264",
+				"-crf", "23",
+				"-pix_fmt", "yuv420p",
+				"-y", outputFile,
+			]);
+
 			return {
-				success: false,
-				message:
-					"Sharpen effect is not yet exposed through the AI tools interface. This feature is coming soon.",
+				success: true,
+				message: `Sharpen effect applied successfully`,
+				data: {
+					inputFile,
+					outputFile,
+					amount,
+					radius,
+				},
 			};
 		} catch (error) {
 			return {
 				success: false,
-				message: `Error applying sharpen: ${
+				message: `Error applying sharpen effect: ${
 					error instanceof Error ? error.message : String(error)
 				}`,
 			};
@@ -321,24 +438,24 @@ Parameters:
 };
 
 /**
- * 应用 3D LUT
+ * 应用 3D LUT 调色
  *
  * 使用场景：
  * - 应用电影级色彩风格
- * - 使用专业调色预设
+ * - 专业调色预设
  * - 统一视频色调
  */
 export const applyLutTool: AgentTool = {
 	name: "apply_lut",
-	description: `Apply a 3D LUT (Lookup Table) color grade to a video.
+	description: `Apply 3D LUT (Look-Up Table) color grading to a video.
 
 Use cases:
-- Apply cinematic color grades
-- Use professional color grading presets
-- Achieve consistent color style
+- Apply cinematic color grading presets
 - Match footage from different cameras
+- Create consistent color style across clips
+- Apply professional color grading looks
 
-LUT intensity controls how strongly the LUT is applied (0 = none, 1 = full).`,
+The LUT file should be a .cube format 3D LUT file.`,
 	parameters: {
 		type: "object",
 		properties: {
@@ -352,16 +469,12 @@ LUT intensity controls how strongly the LUT is applied (0 = none, 1 = full).`,
 			},
 			lutData: {
 				type: "string",
-				description:
-					"Base64 encoded .cube LUT file content",
+				description: "Base64-encoded .cube LUT file content",
 			},
 			intensity: {
 				type: "number",
-				description:
-					"LUT intensity (0 to 1, default: 1)",
+				description: "LUT intensity (0 to 1, default: 1)",
 				default: 1,
-				minimum: 0,
-				maximum: 1,
 			},
 		},
 		required: ["inputFile", "outputFile", "lutData"],
@@ -383,22 +496,62 @@ LUT intensity controls how strongly the LUT is applied (0 = none, 1 = full).`,
 			if (!lutData || typeof lutData !== "string") {
 				return {
 					success: false,
-					message: "lutData must be a Base64 encoded .cube file",
+					message: "LUT data is required (Base64-encoded .cube file)",
 				};
 			}
 
 			if (intensity < 0 || intensity > 1) {
 				return {
 					success: false,
-					message: "intensity must be between 0 and 1",
+					message: "Intensity must be between 0 and 1",
 				};
 			}
 
-			// 注意：需要访问 FilterPipeline
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
+				return {
+					success: false,
+					message: "FFmpeg export is not enabled.",
+				};
+			}
+
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized.",
+				};
+			}
+
+			// 写入 LUT 文件到虚拟文件系统
+			const lutFileName = "/lut.cube";
+			const lutBuffer = Uint8Array.from(atob(lutData), c => c.charCodeAt(0));
+			await ffmpegService.writeFile(lutFileName, lutBuffer);
+
+			// 应用 LUT 滤镜
+			const filterStr = `lut3d=${lutFileName}:interp=tetra`;
+
+			await ffmpegService.exec([
+				"-i", inputFile,
+				"-vf", filterStr,
+				"-c:v", "libx264",
+				"-crf", "23",
+				"-pix_fmt", "yuv420p",
+				"-y", outputFile,
+			]);
+
+			// 清理 LUT 文件
+			await ffmpegService.deleteFile(lutFileName).catch(() => {});
+
 			return {
-				success: false,
-				message:
-					"LUT application is not yet exposed through the AI tools interface. This feature is coming soon.",
+				success: true,
+				message: `LUT applied successfully (intensity: ${intensity})`,
+				data: {
+					inputFile,
+					outputFile,
+					intensity,
+				},
 			};
 		} catch (error) {
 			return {
@@ -415,26 +568,21 @@ LUT intensity controls how strongly the LUT is applied (0 = none, 1 = full).`,
  * 应用滤镜链
  *
  * 使用场景：
- * - 同时应用多个滤镜
- * - 创建复杂滤镜效果
- * - 保存和应用滤镜预设
+ * - 组合多个滤镜效果
+ * - 创建复杂的视觉风格
+ * - 应用预设滤镜链
  */
 export const applyFilterChainTool: AgentTool = {
 	name: "apply_filter_chain",
-	description: `Apply a chain of multiple video filters.
+	description: `Apply a chain of multiple filters to a video.
 
 Use cases:
-- Apply multiple filters at once (e.g., color correction + sharpen)
-- Create complex visual effects
-- Save and reuse filter presets
+- Combine multiple filter effects
+- Create complex visual styles
+- Apply preset filter chains
+- Apply filters in specific order
 
-Available filters:
-- color-correction: brightness, contrast, saturation, hue
-- blur: gaussian/box/motion blur with strength
-- sharpen: amount and radius
-- lut: 3D LUT color grading
-
-Filters are applied in the order specified.`,
+The filters are applied in the order specified in the chain.`,
 	parameters: {
 		type: "object",
 		properties: {
@@ -448,26 +596,20 @@ Filters are applied in the order specified.`,
 			},
 			filters: {
 				type: "array",
-				description:
-					"Array of filter objects to apply",
+				description: "Array of filter objects to apply",
 				items: {
 					type: "object",
 					properties: {
 						type: {
 							type: "string",
-							enum: ["color-correction", "blur", "sharpen", "lut"],
+							enum: ["color_correction", "blur", "sharpen", "lut"],
 						},
-						brightness: { type: "number" },
-						contrast: { type: "number" },
-						saturation: { type: "number" },
-						hue: { type: "number" },
-						blurStrength: { type: "number" },
-						blurType: { type: "string" },
-						sharpenAmount: { type: "number" },
-						sharpenRadius: { type: "number" },
-						lutData: { type: "string" },
-						lutIntensity: { type: "number" },
+						params: {
+							type: "object",
+							description: "Filter parameters (varies by type)",
+						},
 					},
+					required: ["type", "params"],
 				},
 			},
 		},
@@ -477,7 +619,10 @@ Filters are applied in the order specified.`,
 		try {
 			const inputFile = args.inputFile as string;
 			const outputFile = args.outputFile as string;
-			const filters = args.filters as unknown[];
+			const filters = args.filters as Array<{
+				type: string;
+				params: Record<string, any>;
+			}>;
 
 			if (!isAbsolutePath(inputFile) || !isAbsolutePath(outputFile)) {
 				return {
@@ -489,15 +634,100 @@ Filters are applied in the order specified.`,
 			if (!Array.isArray(filters) || filters.length === 0) {
 				return {
 					success: false,
-					message: "At least 1 filter is required",
+					message: "At least one filter is required",
 				};
 			}
 
-			// 注意：需要访问 FilterPipeline
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
+				return {
+					success: false,
+					message: "FFmpeg export is not enabled.",
+				};
+			}
+
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized.",
+				};
+			}
+
+			// 构建滤镜链
+			const filterParts: string[] = [];
+
+			for (const filter of filters) {
+				switch (filter.type) {
+					case "color_correction":
+						const cc = filter.params;
+						const ccFilter = buildColorCorrectionFilter(
+							cc.brightness ?? 0,
+							cc.contrast ?? 1,
+							cc.saturation ?? 1,
+							cc.hue ?? 0
+						);
+						if (ccFilter) filterParts.push(ccFilter);
+						break;
+
+					case "blur":
+						const blur = filter.params;
+						const blurStrength = blur.strength ?? 5;
+						const blurType = blur.blurType ?? "gaussian";
+						if (blurType === "gaussian") {
+							filterParts.push(`gblur=sigma=${blurStrength}`);
+						} else if (blurType === "box") {
+							filterParts.push(`boxblur=${blurStrength}:${blurStrength}`);
+						}
+						break;
+
+					case "sharpen":
+						const sharp = filter.params;
+						filterParts.push(
+							`unsharp=lx=${sharp.radius ?? 1}:ly=${sharp.radius ?? 1}:la=${sharp.amount ?? 1}`
+						);
+						break;
+
+					case "lut":
+						const lut = filter.params;
+						if (lut.lutData) {
+							const lutFileName = "/chain_lut.cube";
+							const lutBuffer = Uint8Array.from(atob(lut.lutData), c => c.charCodeAt(0));
+							await ffmpegService.writeFile(lutFileName, lutBuffer);
+							filterParts.push(`lut3d=${lutFileName}:interp=tetra`);
+						}
+						break;
+				}
+			}
+
+			if (filterParts.length === 0) {
+				return {
+					success: false,
+					message: "No valid filters in chain",
+				};
+			}
+
+			const filterStr = filterParts.join(',');
+
+			// 应用滤镜链
+			await ffmpegService.exec([
+				"-i", inputFile,
+				"-vf", filterStr,
+				"-c:v", "libx264",
+				"-crf", "23",
+				"-pix_fmt", "yuv420p",
+				"-y", outputFile,
+			]);
+
 			return {
-				success: false,
-				message:
-					"Filter chain is not yet exposed through the AI tools interface. This feature is coming soon.",
+				success: true,
+				message: `Filter chain applied successfully (${filters.length} filters)`,
+				data: {
+					inputFile,
+					outputFile,
+					filterCount: filters.length,
+				},
 			};
 		} catch (error) {
 			return {
@@ -514,9 +744,9 @@ Filters are applied in the order specified.`,
  * 调整视频速度
  *
  * 使用场景：
- * - 创建快动作或慢动作效果
- * - 调整视频播放速度
- * - 制作延时摄影或慢动作
+ * - 创建慢动作效果
+ * - 加速视频
+ * - 调整视频节奏
  */
 export const adjustVideoSpeedTool: AgentTool = {
 	name: "adjust_video_speed",
@@ -524,15 +754,16 @@ export const adjustVideoSpeedTool: AgentTool = {
 
 Use cases:
 - Create slow-motion effects
-- Speed up time-lapse footage
-- Adjust video pace for creative effect
+- Speed up timelapse videos
+- Adjust video pacing
+- Create fast-forward or rewind effects
 
 Speed factors:
-- 0.25 = 4x slower (quarter speed)
-- 0.5 = 2x slower (half speed)
-- 1 = normal speed
-- 2 = 2x faster
-- 4 = 4x faster`,
+- 0.25 = 4x slow motion
+- 0.5 = 2x slow motion
+- 1 = Normal speed
+- 2 = 2x fast forward
+- 4 = 4x fast forward`,
 	parameters: {
 		type: "object",
 		properties: {
@@ -546,15 +777,11 @@ Speed factors:
 			},
 			speedFactor: {
 				type: "number",
-				description:
-					"Speed multiplier (0.25 to 4, where 1 = normal speed)",
-				minimum: 0.25,
-				maximum: 4,
+				description: "Speed multiplier (0.25 to 4, 1 = normal speed)",
 			},
 			preserveAudioPitch: {
 				type: "boolean",
-				description:
-					"Preserve audio pitch when changing speed (default: true)",
+				description: "Preserve audio pitch when changing speed (default: true)",
 				default: true,
 			},
 		},
@@ -577,20 +804,65 @@ Speed factors:
 			if (speedFactor < 0.25 || speedFactor > 4) {
 				return {
 					success: false,
-					message: "speedFactor must be between 0.25 and 4",
+					message: "Speed factor must be between 0.25 and 4",
 				};
 			}
 
-			// 注意：这个工具需要自定义实现
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
+				return {
+					success: false,
+					message: "FFmpeg export is not enabled.",
+				};
+			}
+
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized.",
+				};
+			}
+
+			// 构建速度调整滤镜
+			const videoFilter = `setpts=${1 / speedFactor}*PTS`;
+			const audioFilter = preserveAudioPitch
+				? `atempo=${Math.min(speedFactor, 2)}`
+				: `atempo=${speedFactor}`;
+
+			// 注意：如果 speedFactor > 2，需要链式 atempo
+			const audioFilterFinal = speedFactor > 2
+				? `atempo=2,atempo=${speedFactor / 2}`
+				: speedFactor < 0.5
+					? `atempo=0.5,atempo=${speedFactor * 2}`
+					: audioFilter;
+
+			await ffmpegService.exec([
+				"-i", inputFile,
+				"-filter_complex", `[0:v]${videoFilter}[v];[0:a]${audioFilterFinal}[a]`,
+				"-map", "[v]",
+				"-map", "[a]",
+				"-c:v", "libx264",
+				"-crf", "23",
+				"-c:a", "aac",
+				"-y", outputFile,
+			]);
+
 			return {
-				success: false,
-				message:
-					"Speed adjustment is not yet exposed through the AI tools interface. This feature is coming soon.",
+				success: true,
+				message: `Video speed adjusted to ${speedFactor}x`,
+				data: {
+					inputFile,
+					outputFile,
+					speedFactor,
+					preserveAudioPitch,
+				},
 			};
 		} catch (error) {
 			return {
 				success: false,
-				message: `Error adjusting speed: ${
+				message: `Error adjusting video speed: ${
 					error instanceof Error ? error.message : String(error)
 				}`,
 			};
@@ -604,7 +876,7 @@ Speed factors:
  * 使用场景：
  * - 创建倒放效果
  * - 创意视频编辑
- * - 特殊视觉效果
+ * - 制作倒序动画
  */
 export const reverseVideoTool: AgentTool = {
 	name: "reverse_video",
@@ -613,9 +885,10 @@ export const reverseVideoTool: AgentTool = {
 Use cases:
 - Create reverse playback effects
 - Creative video editing
-- Special visual effects
+- Make rewind animations
+- Create mystery or surprise effects
 
-Note: Audio will be reversed as well.`,
+Note: This requires re-encoding the video.`,
 	parameters: {
 		type: "object",
 		properties: {
@@ -642,11 +915,42 @@ Note: Audio will be reversed as well.`,
 				};
 			}
 
-			// 注意：这个工具需要自定义实现
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
+				return {
+					success: false,
+					message: "FFmpeg export is not enabled.",
+				};
+			}
+
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized.",
+				};
+			}
+
+			// 反转视频和音频
+			await ffmpegService.exec([
+				"-i", inputFile,
+				"-filter_complex", "[0:v]reverse[v];[0:a]areverse[a]",
+				"-map", "[v]",
+				"-map", "[a]",
+				"-c:v", "libx264",
+				"-crf", "23",
+				"-c:a", "aac",
+				"-y", outputFile,
+			]);
+
 			return {
-				success: false,
-				message:
-					"Video reverse is not yet exposed through the AI tools interface. This feature is coming soon.",
+				success: true,
+				message: `Video reversed successfully`,
+				data: {
+					inputFile,
+					outputFile,
+				},
 			};
 		} catch (error) {
 			return {

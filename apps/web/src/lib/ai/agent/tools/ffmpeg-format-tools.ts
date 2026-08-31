@@ -1,9 +1,10 @@
 /**
  * Phase 3: 格式转换工具
  *
- * 提供 FormatConverter 视频格式转换功能的 AI 工具接口
+ * 提供视频格式转换功能的 AI 工具接口
  */
 
+import { EditorCore } from "@/core";
 import type { AgentTool } from "./types";
 
 /**
@@ -103,12 +104,62 @@ Quality presets:
 				};
 			}
 
-			// 注意：这个工具需要直接访问 FormatConverter
-			// 未来会通过 RendererManager 暴露
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
+				return {
+					success: false,
+					message:
+						"FFmpeg export is not enabled. Please enable FFmpeg export first.",
+				};
+			}
+
+			// 获取 FFmpegService
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized.",
+				};
+			}
+
+			// 从 outputFile 或 outputFormat 推断目标格式
+			const targetFormat = outputFormat || outputFile.split('.').pop() || 'mp4';
+
+			// 构建 FFmpeg 转换命令
+			const audioFlag = includeAudio ? "-c:a" : "-an";
+			const codec = getCodecForFormat(targetFormat);
+			const crf = getCRFForQuality(quality);
+
+			const convertArgs = [
+				"-i", inputFile,
+				"-c:v", codec,
+				"-crf", crf,
+				audioFlag, includeAudio ? getAudioCodec(targetFormat) : "copy",
+				"-y",
+				outputFile,
+			];
+
+			// 执行转换
+			const result = await ffmpegService.exec(convertArgs);
+
+			if (result.exitCode !== 0) {
+				return {
+					success: false,
+					message: `Format conversion failed: ${result.stderr || 'Unknown error'}`,
+				};
+			}
+
 			return {
-				success: false,
-				message:
-					"Format conversion is not yet exposed through the AI tools interface. This feature is coming soon.",
+				success: true,
+				message: `Video converted successfully from ${inputFile.split('.').pop()} to ${targetFormat}`,
+				data: {
+					inputFile,
+					outputFile,
+					inputFormat: inputFile.split('.').pop(),
+					outputFormat: targetFormat,
+					quality,
+				},
 			};
 		} catch (error) {
 			return {
@@ -209,11 +260,83 @@ Note: This processes files sequentially. Large batches may take significant time
 				};
 			}
 
-			// 注意：这个工具需要直接访问 FormatConverter
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
+				return {
+					success: false,
+					message:
+						"FFmpeg export is not enabled. Please enable FFmpeg export first.",
+				};
+			}
+
+			// 获取 FFmpegService
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized.",
+				};
+			}
+
+			// 批量转换
+			const results = [];
+			const audioFlag = includeAudio ? "-c:a" : "-an";
+			const codec = getCodecForFormat(outputFormat);
+			const crf = getCRFForQuality(quality);
+
+			for (let i = 0; i < inputFiles.length; i++) {
+				const inputFile = inputFiles[i];
+				const fileName = inputFile.split('/').pop() || `file_${i}`;
+				const baseName = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+				const outputFile = `${outputDirectory}/${baseName}.${outputFormat}`;
+
+				try {
+					const convertArgs = [
+						"-i", inputFile,
+						"-c:v", codec,
+						"-crf", crf,
+						audioFlag, includeAudio ? getAudioCodec(outputFormat) : "copy",
+						"-y",
+						outputFile,
+					];
+
+					const result = await ffmpegService.exec(convertArgs);
+
+					if (result.exitCode === 0) {
+						results.push({
+							success: true,
+							inputFile,
+							outputFile,
+						});
+					} else {
+						results.push({
+							success: false,
+							inputFile,
+							error: result.stderr || "Conversion failed",
+						});
+					}
+				} catch (error) {
+					results.push({
+						success: false,
+						inputFile,
+						error: error instanceof Error ? error.message : "Conversion failed",
+					});
+				}
+			}
+
+			const successCount = results.filter((r: any) => r.success).length;
+			const failCount = results.length - successCount;
+
 			return {
-				success: false,
-				message:
-					"Batch format conversion is not yet exposed through the AI tools interface. This feature is coming soon.",
+				success: failCount === 0,
+				message: `Batch conversion completed: ${successCount} succeeded, ${failCount} failed`,
+				data: {
+					total: results.length,
+					success: successCount,
+					failed: failCount,
+					results,
+				},
 			};
 		} catch (error) {
 			return {
@@ -225,6 +348,63 @@ Note: This processes files sequentially. Large batches may take significant time
 		}
 	},
 };
+
+/**
+ * 获取格式对应的视频编码器
+ */
+function getCodecForFormat(format: string): string {
+	switch (format.toLowerCase()) {
+		case 'mp4':
+			return 'libx264';
+		case 'webm':
+			return 'libvpx-vp9';
+		case 'mov':
+			return 'libx264';
+		case 'avi':
+			return 'libx264';
+		case 'mkv':
+			return 'libx264';
+		default:
+			return 'libx264';
+	}
+}
+
+/**
+ * 获取格式对应的音频编码器
+ */
+function getAudioCodec(format: string): string {
+	switch (format.toLowerCase()) {
+		case 'mp4':
+		case 'mov':
+			return 'aac';
+		case 'webm':
+			return 'libopus';
+		case 'avi':
+			return 'libmp3lame';
+		case 'mkv':
+			return 'aac';
+		default:
+			return 'aac';
+	}
+}
+
+/**
+ * 获取质量对应的 CRF 值
+ */
+function getCRFForQuality(quality: string): string {
+	switch (quality) {
+		case 'low':
+			return '28';
+		case 'medium':
+			return '23';
+		case 'high':
+			return '18';
+		case 'max':
+			return '15';
+		default:
+			return '23';
+	}
+}
 
 // 导出所有 Phase 3 工具
 export const ffmpegFormatTools = [

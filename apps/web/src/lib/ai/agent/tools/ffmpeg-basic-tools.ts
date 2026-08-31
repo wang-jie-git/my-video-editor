@@ -78,12 +78,31 @@ Examples of valid commands:
 				};
 			}
 
-			// 注意：这个工具需要直接访问 FFmpegService
-			// 目前通过 RendererManager 暴露
+			// 获取 FFmpegService
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized. Please enable FFmpeg export first.",
+				};
+			}
+
+			// 执行 FFmpeg 命令
+			const result = await ffmpegService.exec(commandArgs, {
+				timeout,
+			});
+
 			return {
-				success: false,
-				message:
-					"Direct FFmpeg command execution is not yet exposed through the AI tools interface. Please use higher-level tools instead.",
+				success: result.exitCode === 0,
+				message: result.exitCode === 0
+					? `FFmpeg command executed successfully in ${result.duration}ms`
+					: `FFmpeg command failed with exit code ${result.exitCode}`,
+				data: {
+					stdout: result.stdout,
+					stderr: result.stderr,
+					exitCode: result.exitCode,
+					duration: result.duration,
+				},
 			};
 		} catch (error) {
 			return {
@@ -135,15 +154,29 @@ Use cases:
 				};
 			}
 
-			// 注意：这个工具需要直接访问 FFmpegService
-			// 目前通过 RendererManager 暴露
+			// 获取 FFmpegService
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: true,
+					message: "FFmpeg export is enabled but FFmpegService is not initialized.",
+					data: {
+						enabled: true,
+						loaded: false,
+					},
+				};
+			}
+
+			const isLoaded = ffmpegService.isLoaded();
+
 			return {
 				success: true,
-				message:
-					"FFmpeg export is enabled. Detailed status not yet available through AI tools.",
+				message: isLoaded
+					? "FFmpeg is loaded and ready"
+					: "FFmpeg export is enabled but FFmpeg is not loaded yet",
 				data: {
 					enabled: true,
-					loaded: true,
+					loaded: isLoaded,
 				},
 			};
 		} catch (error) {
@@ -196,12 +229,36 @@ Use cases:
 				};
 			}
 
-			// 注意：这个工具需要直接访问 FFmpegService
-			// 目前通过 RendererManager 暴露
+			const editor = EditorCore.getInstance();
+			const renderer = editor.renderer;
+			if (!renderer) {
+				return {
+					success: false,
+					message: "FFmpeg export is not enabled.",
+				};
+			}
+
+			// 获取 FFmpegService
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService) {
+				return {
+					success: false,
+					message: "FFmpegService is not initialized.",
+				};
+			}
+
+			// 检查文件是否存在
+			const exists = await ffmpegService.exists(filePath);
+
 			return {
-				success: false,
-				message:
-					"File existence check is not yet exposed through the AI tools interface.",
+				success: true,
+				message: exists
+					? `File '${filePath}' exists`
+					: `File '${filePath}' does not exist`,
+				data: {
+					exists,
+					filePath,
+				},
 			};
 		} catch (error) {
 			return {
