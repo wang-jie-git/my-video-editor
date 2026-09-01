@@ -49,6 +49,10 @@ let mcpTools: AgentTool[] = [];
 let skillTools: AgentTool[] = [];
 let skillsInitialized = false;
 
+// 浏览器环境跳过标志（避免每次对话重复尝试失败初始化）
+let mcpSkippedInBrowser = false;
+let skillsSkippedInBrowser = false;
+
 /**
  * 设置 MCP 工具列表（由 mcp-tools.ts 调用）
  */
@@ -96,7 +100,14 @@ export function getToolByName({
  * 初始化 MCP（动态导入，避免浏览器环境加载）
  */
 export async function initMcpTools(): Promise<void> {
+	if (mcpSkippedInBrowser) return;
 	try {
+		// 浏览器环境无法运行 McpClient（需要 node child_process），直接跳过
+		if (typeof window !== "undefined") {
+			mcpSkippedInBrowser = true;
+			console.log("[Tools] MCP skipped: browser environment");
+			return;
+		}
 		const { initMcpTools: init } = await import("../mcp/mcp-tools");
 		await init();
 	} catch (error) {
@@ -108,7 +119,14 @@ export async function initMcpTools(): Promise<void> {
  * 初始化 Skills（动态导入，避免浏览器环境加载）
  */
 export async function initSkillTools(): Promise<void> {
+	if (skillsSkippedInBrowser) return;
 	try {
+		// 浏览器环境无法读取文件系统（node:fs），跳过技能注册
+		if (typeof window !== "undefined") {
+			skillsSkippedInBrowser = true;
+			console.log("[Tools] Skills skipped: browser environment");
+			return;
+		}
 		const { loadSkillRegistry, buildSkillTools } = await import("../skills");
 		await loadSkillRegistry();
 		setSkillTools(buildSkillTools());

@@ -57,6 +57,10 @@ export const DEFAULT_MCP_SERVERS: McpServerConfig[] = [
  *    但客户端组件代码本身不能直接 import/use McpClient
  */
 export function isMcpSupported(): boolean {
+  // 浏览器环境不支持 McpClient（需要 node child_process 启动子进程）
+  if (typeof window !== "undefined") {
+    return false;
+  }
   // 检查是否启用了 MCP
   // 注意：这里只检查环境变量，不检查 window
   // 因为客户端组件可以通过 Server Actions 调用 MCP
