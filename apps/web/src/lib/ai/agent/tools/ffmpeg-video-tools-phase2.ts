@@ -31,6 +31,10 @@ function getExportParams() {
 		tracks,
 		duration,
 		canvasSize: activeProject.settings.canvasSize,
+		fitCanvasSize:
+			activeProject.settings.originalCanvasSize ??
+			activeProject.settings.canvasSize,
+		background: activeProject.settings.background,
 		mediaAssets: editor.media.getAssets(),
 	};
 }
@@ -168,6 +172,9 @@ Output formats:
 				tracks: params.tracks,
 				duration: params.duration,
 				canvasSize: params.canvasSize,
+				fitCanvasSize: params.fitCanvasSize,
+				background: params.background,
+				mediaAssets: params.mediaAssets,
 				options,
 			});
 

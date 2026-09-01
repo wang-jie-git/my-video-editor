@@ -5,11 +5,11 @@
  */
 
 import { useState, useCallback } from 'react'
-import { FilterPipeline } from '../filter-pipeline'
-import { ColorCorrection } from '../color-correction'
-import { Blur } from '../blur'
-import { Sharpen } from '../sharpen'
-import { LutFilterImpl } from '../lut'
+import { FilterPipeline } from '@/services/renderer/filters/filter-pipeline'
+import { ColorCorrection } from '@/services/renderer/filters/color-correction'
+import { Blur } from '@/services/renderer/filters/blur'
+import { Sharpen } from '@/services/renderer/filters/sharpen'
+import { LutFilterImpl } from '@/services/renderer/filters/lut'
 import {
   createEmptyFilterChain,
   type FilterChain,
@@ -18,7 +18,7 @@ import {
   type BlurFilter,
   type SharpenFilter,
   type LutFilter,
-} from '../index'
+} from '@/services/renderer/filters'
 import filterPanelStyles from './filter-panel.module.css'
 
 interface FilterPanelProps {

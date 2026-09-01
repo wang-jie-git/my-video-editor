@@ -109,7 +109,7 @@ async function testModules() {
 	try {
 		// 动态导入 RendererManager（可能不存在或需要额外配置）
 		try {
-			const { RendererManager } = await import('../core/managers/renderer-manager')
+			const { RendererManager } = await import('../../../core/managers/renderer-manager')
 			console.log('   ✅ RendererManager 导入成功')
 
 			if (typeof RendererManager === 'function') {

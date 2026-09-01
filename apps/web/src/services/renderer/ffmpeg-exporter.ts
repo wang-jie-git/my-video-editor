@@ -7,7 +7,8 @@
 
 import type { ExportOptions, ExportResult } from '@/types/export';
 import type { TimelineTrack } from '@/types/timeline';
-import type { TCanvasSize } from '@/types/project';
+import type { TCanvasSize, TBackground } from '@/types/project';
+import type { MediaAsset } from '@/types/assets';
 import { FFmpegService } from './ffmpeg/ffmpeg-service';
 import { buildScene } from '@/services/renderer/scene-builder';
 import { CanvasRenderer } from '@/services/renderer/canvas-renderer';
@@ -29,9 +30,12 @@ export class FFmpegExporter {
 		tracks: TimelineTrack[];
 		duration: number;
 		canvasSize: TCanvasSize;
+		mediaAssets: MediaAsset[];
+		fitCanvasSize: TCanvasSize;
+		background: TBackground;
 		options: ExportOptions;
 	}): Promise<ExportResult> {
-		const { tracks, duration, canvasSize, options } = params;
+		const { tracks, duration, canvasSize, mediaAssets, fitCanvasSize, background, options } = params;
 		const { format, quality, fps, includeAudio, onProgress, onCancel } = options;
 
 		this.isCancelled = false;
@@ -47,7 +51,6 @@ export class FFmpegExporter {
 			let audioBuffer: AudioBuffer | null = null;
 			if (includeAudio) {
 				onProgress?.({ progress: 0.05 });
-				const mediaAssets: any[] = []; // TODO: 从 MediaManager 获取
 				audioBuffer = await createTimelineAudioBuffer({
 					tracks,
 					mediaAssets,
@@ -59,11 +62,11 @@ export class FFmpegExporter {
 			onProgress?.({ progress: 0.1 });
 			const scene = buildScene({
 				tracks,
-				mediaAssets: [], // TODO: 从 MediaManager 获取
+				mediaAssets,
 				duration,
 				canvasSize,
-				fitCanvasSize: canvasSize, // TODO: 从项目设置获取
-				background: { type: 'color', color: '#000000' }, // TODO: 从项目设置获取
+				fitCanvasSize,
+				background,
 			});
 
 			// 4. 渲染帧为图片

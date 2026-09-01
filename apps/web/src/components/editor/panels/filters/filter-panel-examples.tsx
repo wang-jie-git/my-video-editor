@@ -6,9 +6,10 @@
 
 import { useState } from 'react'
 import { FilterPanel } from './filter-panel'
-import { FilterPipeline } from '../services/renderer/filters/filter-pipeline'
-import { FFmpegService } from '../services/renderer/ffmpeg/ffmpeg-service'
-import type { FilterChain, FilterApplyResult } from '../services/renderer/filters/filter-types'
+import { FilterPipeline } from '@/services/renderer/filters/filter-pipeline'
+import { FFmpegService } from '@/services/renderer/ffmpeg/ffmpeg-service'
+import type { FilterChain, FilterApplyResult } from '@/services/renderer/filters/filter-types'
+import { createEmptyFilterChain } from '@/services/renderer/filters'
 
 // ==================== 示例 1: 基础用法 ====================
 

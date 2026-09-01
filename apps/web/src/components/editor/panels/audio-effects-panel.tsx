@@ -6,9 +6,9 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react'
-import type { AudioEffectsChainConfig } from '../audio-processor'
-import { AudioEffectsChain, type EqualizerBand } from '../audio-processor'
-import { EQUALIZER_PRESETS, COMPRESSOR_PRESETS, REVERB_PRESETS, type CompressorState } from '../audio-processor'
+import type { AudioEffectsChainConfig } from '@/services/renderer/audio'
+import { AudioEffectsChain, type EqualizerBand } from '@/services/renderer/audio'
+import { EQUALIZER_PRESETS, COMPRESSOR_PRESETS, REVERB_PRESETS, type CompressorState } from '@/services/renderer/audio'
 import styles from './audio-effects-panel.module.css'
 
 export interface AudioEffectsPanelProps {
@@ -469,7 +469,7 @@ export function AudioEffectsPanel({
                         }}
                   />
                   <span className={styles.valueLabel}>
-                    {config.reverb?.options && 'decay' in config.reverb.options ? config.reverb.options.decay.toFixed(1) : 1.5}s
+                    {config.reverb?.options && 'decay' in config.reverb.options ? (config.reverb.options.decay as number).toFixed(1) : 1.5}s
                   </span>
                 </div>
               </div>

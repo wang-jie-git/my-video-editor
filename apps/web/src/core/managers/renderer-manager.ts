@@ -17,9 +17,14 @@ export class RendererManager {
   private ffmpegService: FFmpegService | null = null;
   private ffmpegExporter: FFmpegExporter | null = null;
   private videoComposer: VideoComposer | null = null;
-  private useFFmpeg = false;
+  private useFFmpeg = true;
 
-  constructor(private editor: EditorCore) {}
+  constructor(private editor: EditorCore) {
+    // 默认启用 FFmpeg.wasm 导出引擎（文档 08：FFmpeg 迁移 100% 完成，FFmpeg 为目标引擎）
+    this.ffmpegService = new FFmpegService();
+    this.ffmpegExporter = new FFmpegExporter(this.ffmpegService);
+    this.videoComposer = new VideoComposer(this.ffmpegService);
+  }
 
   /**
    * 切换到 FFmpeg 导出引擎
@@ -174,11 +179,17 @@ export class RendererManager {
       // 如果启用 FFmpeg，使用 FFmpegExporter
       if (this.useFFmpeg && this.ffmpegExporter) {
         const canvasSize = activeProject.settings.canvasSize;
+        const originalCanvasSize =
+          activeProject.settings.originalCanvasSize ?? canvasSize;
+        const background = activeProject.settings.background;
 
         return this.ffmpegExporter.export({
           tracks,
           duration,
           canvasSize,
+          mediaAssets,
+          fitCanvasSize: originalCanvasSize,
+          background,
           options,
         });
       }
