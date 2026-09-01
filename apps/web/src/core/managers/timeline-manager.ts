@@ -394,7 +394,12 @@ export class TimelineManager {
 	}
 
 	getTracks(): TimelineTrack[] {
-		return this.editor.scenes.getActiveScene()?.tracks ?? [];
+		try {
+			return this.editor.scenes.getActiveScene()?.tracks ?? [];
+		} catch {
+			// 无激活场景时优雅降级为空数组，避免 AI 助手等调用方崩溃
+			return [];
+		}
 	}
 
 	subscribe(listener: () => void): () => void {
