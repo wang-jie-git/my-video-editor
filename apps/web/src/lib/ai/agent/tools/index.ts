@@ -45,6 +45,9 @@ const LOCAL_TOOLS: AgentTool[] = [
 // MCP 工具（动态加载，仅在 Node.js 环境）
 let mcpTools: AgentTool[] = [];
 
+// Skill 工具（动态加载）
+let skillTools: AgentTool[] = [];
+
 /**
  * 设置 MCP 工具列表（由 mcp-tools.ts 调用）
  */
@@ -53,14 +56,21 @@ export function setMcpTools(tools: AgentTool[]): void {
 }
 
 /**
- * 获取所有工具（本地 + MCP）
+ * 设置 Skill 工具列表（由 skill-tools.ts 调用）
  */
-export function getAllTools(): AgentTool[] {
-	return [...LOCAL_TOOLS, ...mcpTools];
+export function setSkillTools(tools: AgentTool[]): void {
+	skillTools = tools;
 }
 
 /**
- * 获取所有工具 Schema（本地 + MCP）
+ * 获取所有工具（本地 + MCP + Skills）
+ */
+export function getAllTools(): AgentTool[] {
+	return [...LOCAL_TOOLS, ...skillTools, ...mcpTools];
+}
+
+/**
+ * 获取所有工具 Schema（本地 + MCP + Skills）
  */
 export function getAllToolSchemas(): OpenAIToolSchema[] {
 	return getAllTools().map((tool) => buildToolSchema({ tool }));
@@ -90,6 +100,32 @@ export async function initMcpTools(): Promise<void> {
 		await init();
 	} catch (error) {
 		console.error("[Tools] Failed to initialize MCP:", error);
+	}
+}
+
+/**
+ * 初始化 Skills（动态导入，避免浏览器环境加载）
+ */
+export async function initSkillTools(): Promise<void> {
+	try {
+		const { loadSkillRegistry, buildSkillTools } = await import("../skills");
+		await loadSkillRegistry();
+		setSkillTools(buildSkillTools());
+		refreshToolMap();
+	} catch (error) {
+		console.error("[Tools] Failed to initialize Skills:", error);
+	}
+}
+
+/**
+ * 检查 Skills 是否就绪
+ */
+export function isSkillsReady(): boolean {
+	try {
+		const { isSkillsReady: check } = require("../skills");
+		return check();
+	} catch {
+		return false;
 	}
 }
 

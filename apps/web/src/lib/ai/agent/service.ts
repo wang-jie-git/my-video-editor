@@ -7,7 +7,7 @@ import {
 } from "./expert-roles";
 import { streamChatCompletion } from "./llm-client";
 import { buildSystemPrompt } from "./system-prompt";
-import { getAllToolSchemas, getToolByName, isMcpReady } from "./tools";
+import { getAllToolSchemas, getToolByName, isMcpReady, isSkillsReady } from "./tools";
 import { type AgentTool, buildToolSchema } from "./tools/types";
 import type {
 	AgentLLMConfig,
@@ -254,6 +254,16 @@ export async function runAgentLoop({
 		} catch (error) {
 			console.warn("[Agent] MCP initialization skipped:", error);
 			// 继续执行，仅使用本地工具
+		}
+	}
+
+	// 初始化 Skills（静态技能不阻塞对话，失败静默降级）
+	if (!isSkillsReady()) {
+		try {
+			const { initSkillTools } = await import("./tools");
+			await initSkillTools();
+		} catch (error) {
+			console.warn("[Agent] Skills initialization skipped:", error);
 		}
 	}
 
