@@ -22,3 +22,6 @@ bun.lockb
 
 # moat runtime artifacts (auto-generated, do not commit)
 .moat/
+
+# moat venv (python virtual env, do not commit)
+.venv-moat/
