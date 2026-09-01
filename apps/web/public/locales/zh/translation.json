@@ -680,5 +680,11 @@
   "kfeb8792": "quickTrim",
   "kff14c2cb": "删除 {{num}} 个项目？",
   "kff396558": "角色名称",
-  "kff9b9bf4": "编辑视频，"
+  "kff9b9bf4": "编辑视频，",
+  "Basic": "基本",
+  "Skills": "技能",
+  "Failed to load skills": "加载技能失败",
+  "No skills available": "暂无可用技能",
+  "Reusable workflow instructions available to the AI assistant": "AI 助手可用的可复用工作流指令",
+  "Loading...": "加载中..."
 }

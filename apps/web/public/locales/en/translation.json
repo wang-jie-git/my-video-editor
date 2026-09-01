@@ -685,5 +685,11 @@
   "kfeb8792": "quickTrim",
   "kff14c2cb": "Delete {{num}} projects?",
   "kff396558": "Character name",
-  "kff9b9bf4": "Edit videos,"
+  "kff9b9bf4": "Edit videos,",
+  "Basic": "Basic",
+  "Skills": "Skills",
+  "Failed to load skills": "Failed to load skills",
+  "No skills available": "No skills available",
+  "Reusable workflow instructions available to the AI assistant": "Reusable workflow instructions available to the AI assistant",
+  "Loading...": "Loading..."
 }
