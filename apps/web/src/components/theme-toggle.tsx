@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { useTheme } from "next-themes";
 import { cn } from "@/utils/ui";
@@ -18,6 +19,11 @@ export function ThemeToggle({
 	onToggle,
 }: ThemeToggleProps) {
 	const { theme, setTheme } = useTheme();
+	const [mounted, setMounted] = useState(false);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	return (
 		<Button
@@ -30,7 +36,9 @@ export function ThemeToggle({
 			}}
 		>
 			<HugeiconsIcon icon={Sun03Icon} className={cn("!size-[1.1rem]", iconClassName)} />
-			<span className="sr-only">{theme === "dark" ? "Light" : "Dark"}</span>
+			{/* mounted 守卫：SSR/客户端首次渲染都渲染空占位，避免 next-themes
+			    读取 localStorage 偏好后与服务端文本不一致导致 hydration 失败 */}
+			<span className="sr-only">{mounted ? (theme === "dark" ? "Light" : "Dark") : ""}</span>
 		</Button>
 	);
 }

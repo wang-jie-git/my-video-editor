@@ -79,58 +79,11 @@ Key sections:
 - [Performance Tips](#性能优化建议) - Optimization strategies
 `;
 
-// 辅助函数：从翻译键构建 FFmpeg 提示词部分
-export function buildFFmpegPromptSection(i18next: any): string {
-    const t = (key: string, options?: any) => i18next.t(`ai.ffmpeg.${key}`, options);
-
-    return `
-## ${t('title')}
-
-### ${t('whenToUse.title')}
-${t('whenToUse.useFFmpeg')}
-${t('whenToUse.useCases')
-    .map((uc: string) => `- ${uc}`)
-    .join('\n')}
-
-**${t('whenToUse.doNotUse')}**
-${t('whenToUse.doNotUseCases')
-    .map((uc: string) => `- ${uc}`)
-    .join('\n')}
-
-### ${t('concepts.title')}
-1. **${t('concepts.paths.title')}**: ${t('concepts.paths.description')}
-2. **${t('concepts.services.title')}**: ${t('concepts.services.description')}
-3. **${t('concepts.response.title')}**: ${t('concepts.response.description')}
-4. **${t('concepts.errorHandling.title')}**: ${t('concepts.errorHandling.description')}
-
-### ${t('quickReference.title')}
-| ${t('quickReference.categories.basic.name')} | ${t('quickReference.categories.basic.tools').join(', ')} | ${t('quickReference.categories.basic.useCases')} |
-| ${t('quickReference.categories.export.name')} | ${t('quickReference.categories.export.tools').join(', ')} | ${t('quickReference.categories.export.useCases')} |
-| ${t('quickReference.categories.format.name')} | ${t('quickReference.categories.format.tools').join(', ')} | ${t('quickReference.categories.format.useCases')} |
-| ${t('quickReference.categories.filters.name')} | ${t('quickReference.categories.filters.tools').join(', ')} | ${t('quickReference.categories.filters.useCases')} |
-| ${t('quickReference.categories.subtitles.name')} | ${t('quickReference.categories.subtitles.tools').join(', ')} | ${t('quickReference.categories.subtitles.useCases')} |
-| ${t('quickReference.categories.audio.name')} | ${t('quickReference.categories.audio.tools').join(', ')} | ${t('quickReference.categories.audio.useCases')} |
-| ${t('quickReference.categories.mergeSplit.name')} | ${t('quickReference.categories.mergeSplit.tools').join(', ')} | ${t('quickReference.categories.mergeSplit.useCases')} |
-
-### ${t('workflow.title')}
-${t('workflow.steps')
-    .map((step: string, i: number) => `${i + 1}. ${step}`)
-    .join('\n')}
-
-### ${t('notes.title')}
-- **${t('notes.longRunning').split(':')[0]}**: ${t('notes.longRunning').split(':').slice(1).join(':').trim()}
-- **${t('notes.qualityPresets').split(':')[0]}**: ${t('notes.qualityPresets').split(':').slice(1).join(':').trim()}
-- **${t('notes.batchOperations').split(':')[0]}**: ${t('notes.batchOperations').split(':').slice(1).join(':').trim()}
-- **${t('notes.advancedUsers').split(':')[0]}**: ${t('notes.advancedUsers').split(':').slice(1).join(':').trim()}
-
-### ${t('documentation.title')}
-${t('documentation.reference')} \`${t('documentation.path')}\`
-
-- ${t('documentation.sections.quickStart')}
-- ${t('documentation.sections.coreConcepts')}
-- ${t('documentation.sections.toolReference')}
-- ${t('documentation.sections.scenarios')}
-- ${t('documentation.sections.errorHandling')}
-- ${t('documentation.sections.performance')}
-`;
+// 辅助函数：返回 FFmpeg 提示词部分
+// 注意：不要通过 i18next.t() 动态拼接。项目的 i18n 使用 CRC32 哈希键查找，
+// 而 `ai.ffmpeg.*` 的明文翻译在 ffmpeg-tools.json（未加载进 namespace），
+// 哈希查找会 miss 并回退返回 key 字符串，对字符串调 .map/.join 会抛
+// "t(...).map is not a function"。这里直接使用完整的英文提示词常量。
+export function buildFFmpegPromptSection(_i18next: any): string {
+    return ffmpegPromptEn;
 }
