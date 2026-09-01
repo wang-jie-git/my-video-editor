@@ -79,8 +79,15 @@ export const useAgentStore = create<AgentState>()(
 
 			sendMessage: async (content: string) => {
 				const state = get();
-				if (state.status !== "idle") return;
+				// idle 与 error 都可发送：error 是上次失败的遗留状态，
+				// 用户修复配置后应能重新发起（UI 的 isBusy 已排除 error）
+				if (state.status !== "idle" && state.status !== "error") return;
 				if (!state.config.apiKey) return;
+
+				// 清除上一次的 error 遗留，让新消息正常进入对话
+				const previousMessages = state.messages.filter(
+					(m) => !(m.role === "assistant" && m.content.startsWith("Error:")),
+				);
 
 				const userMessage: AgentMessage = {
 					id: generateUUID(),
@@ -89,7 +96,7 @@ export const useAgentStore = create<AgentState>()(
 					timestamp: Date.now(),
 				};
 
-				const currentMessages = [...state.messages, userMessage];
+				const currentMessages = [...previousMessages, userMessage];
 				set({
 					messages: currentMessages,
 					status: "thinking",
