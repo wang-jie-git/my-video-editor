@@ -7,7 +7,7 @@ import {
 } from "./expert-roles";
 import { streamChatCompletion } from "./llm-client";
 import { buildSystemPrompt } from "./system-prompt";
-import { getAllToolSchemas, getToolByName } from "./tools";
+import { getAllToolSchemas, getToolByName, isMcpReady } from "./tools";
 import { type AgentTool, buildToolSchema } from "./tools/types";
 import type {
 	AgentLLMConfig,
@@ -245,6 +245,18 @@ export async function runAgentLoop({
 	signal: AbortSignal;
 	roleId?: ExpertRoleId;
 }): Promise<AgentMessage[]> {
+	// 初始化 MCP 工具（仅在服务端 Node.js 环境，优雅降级）
+	if (!isMcpReady()) {
+		try {
+			// 动态导入 MCP 代码，避免在客户端捆绑包中包含 Node.js 专有模块
+			const { initMcpTools } = await import("./tools");
+			await initMcpTools();
+		} catch (error) {
+			console.warn("[Agent] MCP initialization skipped:", error);
+			// 继续执行，仅使用本地工具
+		}
+	}
+
 	let activeRoleId = roleId;
 	const isDirectorMode = roleId === "auto";
 

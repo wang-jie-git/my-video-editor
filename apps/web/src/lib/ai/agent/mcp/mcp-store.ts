@@ -1,0 +1,266 @@
+/**
+ * McpStore - Zustand store for MCP configuration and state
+ *
+ * 管理：
+ * - MCP 全局开关
+ * - MCP Server 列表
+ * - Server 连接状态
+ * - UI 状态（面板开关等）
+ */
+
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { generateUUID } from "@/utils/id";
+import type { McpServerConfig, McpServerStatus, McpConfig } from "./types";
+import { getMcpManager, setMcpManager } from "./mcp-manager";
+import { McpClient } from "./mcp-client";
+
+interface McpPersistedState {
+  config: McpConfig;
+}
+
+interface McpState extends McpPersistedState {
+  // Server 状态
+  serverStatuses: McpServerStatus[];
+
+  // UI 状态
+  isSettingsOpen: boolean;
+
+  // Actions
+  toggleEnabled: () => void;
+  setEnabled: (enabled: boolean) => void;
+  addServer: (server: Omit<McpServerConfig, "id">) => void;
+  updateServer: (id: string, updates: Partial<McpServerConfig>) => void;
+  removeServer: (id: string) => void;
+  toggleServerEnabled: (id: string) => void;
+  toggleSettingsOpen: () => void;
+
+  // Manager actions
+  connectServer: (id: string) => Promise<void>;
+  disconnectServer: (id: string) => void;
+  connectAll: () => Promise<void>;
+  disconnectAll: () => void;
+  refreshStatus: () => void;
+}
+
+/**
+ * 默认 MCP Server 配置
+ */
+const DEFAULT_SERVERS: McpServerConfig[] = [
+  {
+    id: "one-memory",
+    name: "One Memory",
+    description: "One Memory 记忆系统（19 个工具）",
+    enabled: false,
+    serverPath: "/Users/mac/Desktop/AI-memory/packages/memory-mcp/build/index.js",
+    serverArgs: ["--embedder", "simple"],
+    timeout: 30000,
+    icon: "🧠",
+    category: "memory",
+  },
+];
+
+/**
+ * 默认配置
+ */
+const DEFAULT_CONFIG: McpConfig = {
+  enabled: false,
+  servers: DEFAULT_SERVERS,
+};
+
+/**
+ * MCP Store
+ *
+ * 持久化配置到 localStorage
+ * - 不持久化连接状态（serverStatuses）
+ */
+export const useMcpStore = create<McpState>()(
+  persist(
+    (set, get) => ({
+      config: DEFAULT_CONFIG,
+      serverStatuses: [],
+      isSettingsOpen: false,
+
+      // 切换全局开关
+      toggleEnabled: () => {
+        const newEnabled = !get().config.enabled;
+        set((state) => ({
+          config: { ...state.config, enabled: newEnabled },
+        }));
+
+        // 自动连接/断开所有 Server
+        if (newEnabled) {
+          get().connectAll();
+        } else {
+          get().disconnectAll();
+        }
+      },
+
+      // 设置全局开关
+      setEnabled: (enabled: boolean) => {
+        set((state) => ({
+          config: { ...state.config, enabled },
+        }));
+
+        if (enabled) {
+          get().connectAll();
+        } else {
+          get().disconnectAll();
+        }
+      },
+
+      // 添加 Server
+      addServer: (server: Omit<McpServerConfig, "id">) => {
+        const newServer: McpServerConfig = {
+          ...server,
+          id: generateUUID(),
+        };
+
+        set((state) => ({
+          config: {
+            ...state.config,
+            servers: [...state.config.servers, newServer],
+          },
+        }));
+
+        // 如果启用了全局开关且 Server 本身启用，自动连接
+        if (get().config.enabled && newServer.enabled) {
+          get().connectServer(newServer.id);
+        }
+      },
+
+      // 更新 Server
+      updateServer: (id: string, updates: Partial<McpServerConfig>) => {
+        set((state) => ({
+          config: {
+            ...state.config,
+            servers: state.config.servers.map((s) =>
+              s.id === id ? { ...s, ...updates } : s
+            ),
+          },
+        }));
+
+        // 如果更新了 enabled 状态
+        if (updates.enabled !== undefined && get().config.enabled) {
+          if (updates.enabled) {
+            get().connectServer(id);
+          } else {
+            get().disconnectServer(id);
+          }
+        }
+      },
+
+      // 删除 Server
+      removeServer: (id: string) => {
+        // 先断开连接
+        get().disconnectServer(id);
+
+        set((state) => ({
+          config: {
+            ...state.config,
+            servers: state.config.servers.filter((s) => s.id !== id),
+          },
+          serverStatuses: state.serverStatuses.filter((s) => s.id !== id),
+        }));
+      },
+
+      // 切换 Server 启用状态
+      toggleServerEnabled: (id: string) => {
+        const server = get().config.servers.find((s) => s.id === id);
+        if (!server) return;
+
+        get().updateServer(id, { enabled: !server.enabled });
+      },
+
+      // 切换设置面板
+      toggleSettingsOpen: () => {
+        set((state) => ({ isSettingsOpen: !state.isSettingsOpen }));
+      },
+
+      // 连接单个 Server
+      connectServer: async (id: string) => {
+        const server = get().config.servers.find((s) => s.id === id);
+        if (!server) {
+          console.warn(`[McpStore] Server "${id}" not found`);
+          return;
+        }
+
+        console.log(`[McpStore] Connecting server: ${server.name}`);
+
+        const manager = getMcpManager();
+
+        try {
+          // 先移除已存在的 server（如果有）
+          if ((manager as any).servers?.has(id)) {
+            console.log(`[McpStore] Removing existing server "${id}" before reconnecting`);
+            manager.removeServer(id);
+          }
+
+          await manager.addServer(server);
+          get().refreshStatus();
+        } catch (error) {
+          console.error(`[McpStore] Failed to connect server "${id}":`, error);
+          get().refreshStatus();
+        }
+      },
+
+      // 断开单个 Server
+      disconnectServer: (id: string) => {
+        console.log(`[McpStore] Disconnecting server: ${id}`);
+        const manager = getMcpManager();
+
+        // 调用 manager.removeServer() 来断开并移除
+        if ((manager as any).servers?.has(id)) {
+          manager.removeServer(id);
+        }
+
+        get().refreshStatus();
+      },
+
+      // 连接所有启用的 Server
+      connectAll: async () => {
+        console.log("[McpStore] Connecting all enabled servers...");
+        const manager = getMcpManager();
+
+        for (const server of get().config.servers) {
+          if (server.enabled) {
+            try {
+              await manager.addServer(server);
+            } catch (error) {
+              console.error(`[McpStore] Failed to connect "${server.name}":`, error);
+            }
+          }
+        }
+
+        get().refreshStatus();
+      },
+
+      // 断开所有 Server
+      disconnectAll: () => {
+        console.log("[McpStore] Disconnecting all servers...");
+        getMcpManager().disconnectAll();
+        set({ serverStatuses: [] });
+      },
+
+      // 刷新状态
+      refreshStatus: () => {
+        const manager = getMcpManager();
+        const statuses = manager.getAllServerStatuses();
+        set({ serverStatuses: statuses });
+      },
+    }),
+    {
+      name: "mcp-config",
+      partialize: (state) => ({
+        config: state.config,
+      }),
+    }
+  )
+);
+
+/**
+ * 获取 MCP Manager 单例
+ */
+export function getManager(): import("./mcp-manager").McpManager {
+  return getMcpManager();
+}

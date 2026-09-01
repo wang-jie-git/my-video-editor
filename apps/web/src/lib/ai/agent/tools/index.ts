@@ -16,7 +16,8 @@ import { timelineTools } from "./timeline-tools";
 import { ttsTools } from "./tts-tools";
 import { type AgentTool, buildToolSchema } from "./types";
 
-const ALL_TOOLS: AgentTool[] = [
+// 本地工具（静态）
+const LOCAL_TOOLS: AgentTool[] = [
 	...projectTools,
 	...frameTools,
 	...mediaTools,
@@ -41,10 +42,37 @@ const ALL_TOOLS: AgentTool[] = [
 	...ffmpegVideoTools,
 ];
 
+// MCP 工具（动态加载，仅在 Node.js 环境）
+let mcpTools: AgentTool[] = [];
+
+/**
+ * 设置 MCP 工具列表（由 mcp-tools.ts 调用）
+ */
+export function setMcpTools(tools: AgentTool[]): void {
+	mcpTools = tools;
+}
+
+/**
+ * 获取所有工具（本地 + MCP）
+ */
+export function getAllTools(): AgentTool[] {
+	return [...LOCAL_TOOLS, ...mcpTools];
+}
+
+/**
+ * 获取所有工具 Schema（本地 + MCP）
+ */
+export function getAllToolSchemas(): OpenAIToolSchema[] {
+	return getAllTools().map((tool) => buildToolSchema({ tool }));
+}
+
 const toolMap = new Map<string, AgentTool>(
-	ALL_TOOLS.map((tool) => [tool.name, tool]),
+	getAllTools().map((tool) => [tool.name, tool]),
 );
 
+/**
+ * 根据名称获取工具
+ */
 export function getToolByName({
 	name,
 }: {
@@ -53,10 +81,36 @@ export function getToolByName({
 	return toolMap.get(name);
 }
 
-export function getAllTools(): AgentTool[] {
-	return ALL_TOOLS;
+/**
+ * 初始化 MCP（动态导入，避免浏览器环境加载）
+ */
+export async function initMcpTools(): Promise<void> {
+	try {
+		const { initMcpTools: init } = await import("../mcp/mcp-tools");
+		await init();
+	} catch (error) {
+		console.error("[Tools] Failed to initialize MCP:", error);
+	}
 }
 
-export function getAllToolSchemas(): OpenAIToolSchema[] {
-	return ALL_TOOLS.map((tool) => buildToolSchema({ tool }));
+/**
+ * 检查 MCP 是否就绪
+ */
+export function isMcpReady(): boolean {
+	try {
+		const { isMcpReady: check } = require("../mcp/mcp-tools");
+		return check();
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * 刷新工具映射
+ */
+export function refreshToolMap(): void {
+	toolMap.clear();
+	getAllTools().forEach((tool) => {
+		toolMap.set(tool.name, tool);
+	});
 }
