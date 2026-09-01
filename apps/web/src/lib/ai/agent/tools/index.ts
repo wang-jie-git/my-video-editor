@@ -98,14 +98,46 @@ export function getToolByName({
 
 /**
  * 初始化 MCP（动态导入，避免浏览器环境加载）
+ *
+ * - Node 环境：真实 spawn MCP Server 子进程
+ * - 浏览器环境：通过 HTTP 桥接到 server 端 API（Phase 2）
+ *   纯浏览器部署（无 server）时 fetch 失败 → 优雅降级为空工具
  */
 export async function initMcpTools(): Promise<void> {
 	if (mcpSkippedInBrowser) return;
 	try {
-		// 浏览器环境无法运行 McpClient（需要 node child_process），直接跳过
+		// 浏览器环境：HTTP 桥接
 		if (typeof window !== "undefined") {
-			mcpSkippedInBrowser = true;
-			console.log("[Tools] MCP skipped: browser environment");
+			const {
+				bridgeIsAvailable,
+				bridgeConnectServers,
+				bridgeFetchMcpTools,
+				buildBridgeMcpTools,
+			} = await import("../bridge/mcp-bridge");
+			// 桥接不可达（纯浏览器部署无 server）→ 跳过本次，不反复尝试
+			const available = await bridgeIsAvailable();
+			if (!available) {
+				mcpSkippedInBrowser = true;
+				console.log("[Tools] MCP bridge unavailable, skipped");
+				return;
+			}
+			// 从 localStorage 持久化的 MCP 配置中读取启用的 Server 并连接
+			let servers: Parameters<typeof bridgeConnectServers>[0] = [];
+			try {
+				const { useMcpStore } = await import("../mcp/mcp-store");
+				servers = useMcpStore.getState().config.servers;
+			} catch {
+				servers = [];
+			}
+			const connected = await bridgeConnectServers(servers);
+			const tools = await bridgeFetchMcpTools();
+			if (tools.length > 0) {
+				setMcpTools(buildBridgeMcpTools(tools));
+				refreshToolMap();
+			}
+			console.log(
+				`[Tools] MCP via HTTP bridge: connected=${connected} tools=${tools.length}`,
+			);
 			return;
 		}
 		const { initMcpTools: init } = await import("../mcp/mcp-tools");
@@ -117,14 +149,23 @@ export async function initMcpTools(): Promise<void> {
 
 /**
  * 初始化 Skills（动态导入，避免浏览器环境加载）
+ *
+ * - Node 环境：真实读取文件系统（node:fs）加载技能
+ * - 浏览器环境：通过 HTTP 桥接到 server 端 API（Phase 2）
+ *   纯浏览器部署（无 server）时 fetch 失败 → 优雅降级为空工具
  */
 export async function initSkillTools(): Promise<void> {
 	if (skillsSkippedInBrowser) return;
 	try {
-		// 浏览器环境无法读取文件系统（node:fs），跳过技能注册
+		// 浏览器环境：HTTP 桥接
 		if (typeof window !== "undefined") {
+			const { buildBridgeSkillTools } = await import("../bridge/skill-bridge");
+			const tools = buildBridgeSkillTools();
+			setSkillTools(tools);
+			refreshToolMap();
+			skillsInitialized = true;
 			skillsSkippedInBrowser = true;
-			console.log("[Tools] Skills skipped: browser environment");
+			console.log(`[Tools] Skills via HTTP bridge: ${tools.length} tools`);
 			return;
 		}
 		const { loadSkillRegistry, buildSkillTools } = await import("../skills");

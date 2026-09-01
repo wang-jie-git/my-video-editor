@@ -25,6 +25,8 @@ interface McpClientInstance {
 export class McpManager {
   private servers = new Map<string, McpClientInstance>();
   private allTools = new Map<string, McpToolSchema>();
+  /** 工具名 → 所属 Server ID（HTTP 桥接 call 时路由用） */
+  private toolOwners = new Map<string, string>();
 
   /**
    * 添加并启动 MCP Server
@@ -98,6 +100,7 @@ export class McpManager {
           name: toolName,
           description: `[${config.name}] ${tool.description}`,
         });
+        this.toolOwners.set(toolName, config.id);
       }
 
       console.log(
@@ -136,6 +139,7 @@ export class McpManager {
     for (const [toolName, tool] of this.allTools) {
       if (toolName.startsWith(`${id}_`) || toolName === id) {
         this.allTools.delete(toolName);
+        this.toolOwners.delete(toolName);
       }
     }
 
@@ -181,8 +185,19 @@ export class McpManager {
     for (const [toolName] of this.allTools) {
       if (toolName.startsWith(`${id}_`) || toolName === id) {
         this.allTools.delete(toolName);
+        this.toolOwners.delete(toolName);
       }
     }
+  }
+
+  /**
+   * 获取所有工具（含所属 Server ID，供 HTTP 桥接路由）
+   */
+  getAllToolsWithServer(): Array<{ tool: McpToolSchema; serverId: string }> {
+    return Array.from(this.allTools.entries()).map(([name, tool]) => ({
+      tool,
+      serverId: this.toolOwners.get(name) ?? "default",
+    }));
   }
 
   /**
