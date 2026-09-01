@@ -1,0 +1,50 @@
+{
+  "name": "@cutia/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cutia 桌面客户端（Electron 壳 + 内嵌 Next standalone server）",
+  "main": "dist/main/index.js",
+  "packageManager": "bun@1.2.18",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "package": "npm run build && electron-builder --dir",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:win": "npm run build && electron-builder --win",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cutia/web": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^4.0.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.0"
+  },
+  "build": {
+    "appId": "com.cutia.desktop",
+    "productName": "Cutia",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.video",
+      "identity": null
+    },
+    "win": {
+      "target": ["nsis"]
+    },
+    "linux": {
+      "target": ["AppImage"]
+    }
+  }
+}

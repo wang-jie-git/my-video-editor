@@ -8,6 +8,9 @@
   "scripts": {
     "dev:web": "turbo run dev --filter=@cutia/web",
     "build:web": "turbo run build --filter=@cutia/web",
+    "dev:desktop": "turbo run dev --filter=@cutia/desktop",
+    "build:desktop": "turbo run build --filter=@cutia/desktop",
+    "package:mac": "turbo run build --filter=@cutia/desktop && cd apps/desktop && bun run package:mac",
     "dev:tools": "turbo run dev --filter=@cutia/tools",
     "build:tools": "turbo run build --filter=@cutia/tools",
     "start:tools": "turbo run start --filter=@cutia/tools",
