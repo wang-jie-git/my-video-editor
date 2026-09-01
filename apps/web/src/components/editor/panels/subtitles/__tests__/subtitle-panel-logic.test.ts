@@ -7,16 +7,18 @@
 import { describe, it, expect, beforeEach } from 'bun:test'
 import { SubtitlePipeline } from '@/services/renderer/subtitles'
 import { createSubtitle, createSubtitleTrack } from '@/services/renderer/subtitles'
+import type { FFmpegService } from '@/services/renderer/ffmpeg/ffmpeg-service'
 
 // Mock FFmpegService
-const createMockFFmpegService = () => ({
-  load: async () => {},
-  exec: async () => {},
-  writeFile: async () => {},
-  readFile: async () => new Uint8Array(1024),
-  deleteFile: async () => {},
-  isLoaded: () => true,
-})
+const createMockFFmpegService = () =>
+  ({
+    load: async () => {},
+    exec: async () => {},
+    writeFile: async () => {},
+    readFile: async () => new Uint8Array(1024),
+    deleteFile: async () => {},
+    isLoaded: () => true,
+  } as unknown as FFmpegService)
 
 describe('SubtitlePanel Logic', () => {
   let pipeline: SubtitlePipeline

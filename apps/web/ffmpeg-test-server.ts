@@ -41,7 +41,7 @@ serve({
 			}
 
 			const ext = filePath.substring(filePath.lastIndexOf('.'))
-			const contentType = mimeTypes[ext] || 'application/octet-stream'
+			const contentType = mimeTypes[ext as keyof typeof mimeTypes] || 'application/octet-stream'
 
 			return new Response(file, {
 				headers: {
@@ -51,7 +51,8 @@ serve({
 				},
 			})
 		} catch (err) {
-			return new Response(`Error: ${err.message}`, { status: 500 })
+			const message = err instanceof Error ? err.message : String(err)
+			return new Response(`Error: ${message}`, { status: 500 })
 		}
 	},
 })

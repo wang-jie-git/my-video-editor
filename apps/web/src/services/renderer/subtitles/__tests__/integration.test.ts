@@ -8,16 +8,18 @@ import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { SubtitlePipeline } from '@/services/renderer/subtitles'
 import { createSubtitle, createSubtitleTrack } from '@/services/renderer/subtitles'
 import type { SubtitleTrack, Subtitle } from '@/services/renderer/subtitles'
+import type { FFmpegService } from '@/services/renderer/ffmpeg/ffmpeg-service'
 
 // Mock FFmpegService
-const createMockFFmpegService = () => ({
-  load: async () => {},
-  exec: async () => {},
-  writeFile: async () => {},
-  readFile: async () => new Uint8Array(1024),
-  deleteFile: async () => {},
-  isLoaded: () => true,
-})
+const createMockFFmpegService = () =>
+  ({
+    load: async () => {},
+    exec: async () => {},
+    writeFile: async () => {},
+    readFile: async () => new Uint8Array(1024),
+    deleteFile: async () => {},
+    isLoaded: () => true,
+  } as unknown as FFmpegService)
 
 // ==================== EditorCore 集成测试 ====================
 
@@ -448,10 +450,10 @@ describe('FFmpeg 烧录集成测试', () => {
 
       // Mock FFmpeg exec 调用
       let capturedArgs: string[] = []
-      ffmpegService.exec = async (args: string[]) => {
+      ffmpegService.exec = (async (args: string[]) => {
         capturedArgs = args
         return Promise.resolve()
-      }
+      }) as any
 
       const result = await pipeline.burnSubtitles({
         inputFile: 'input.mp4',
@@ -482,10 +484,10 @@ describe('FFmpeg 烧录集成测试', () => {
       })
 
       let capturedArgs: string[] = []
-      ffmpegService.exec = async (args: string[]) => {
+      ffmpegService.exec = (async (args: string[]) => {
         capturedArgs = args
         return Promise.resolve()
-      }
+      }) as any
 
       await pipeline.burnSubtitles({
         inputFile: 'input.mp4',
@@ -507,14 +509,14 @@ describe('FFmpeg 烧录集成测试', () => {
       })
 
       const progressUpdates: number[] = []
-      ffmpegService.exec = async (_args: string[], options?: { onProgress?: (p: number) => void }) => {
+      ffmpegService.exec = (async (_args: string[], options?: { onProgress?: (p: number) => void }) => {
         // 模拟进度更新
         options?.onProgress?.(25)
         options?.onProgress?.(50)
         options?.onProgress?.(75)
         options?.onProgress?.(100)
         return Promise.resolve()
-      }
+      }) as any
 
       await pipeline.burnSubtitles({
         inputFile: 'input.mp4',
@@ -536,9 +538,9 @@ describe('FFmpeg 烧录集成测试', () => {
         subtitles: [createSubtitle('Test', 1, 4)],
       })
 
-      ffmpegService.exec = async () => {
+      ffmpegService.exec = (async () => {
         throw new Error('FFmpeg execution failed')
-      }
+      }) as any
 
       const result = await pipeline.burnSubtitles({
         inputFile: 'input.mp4',

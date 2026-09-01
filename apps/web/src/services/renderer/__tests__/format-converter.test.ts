@@ -74,7 +74,7 @@ describe('FormatConverter', () => {
 
     it('应该将未知格式识别为非视频格式', () => {
       const result = converter.detectFormat('file.txt')
-      expect(result.format).toBe('txt') // 返回实际扩展名
+      expect(result.format as string).toBe('txt') // 返回实际扩展名
       expect(result.isVideo).toBe(false)
       expect(result.supported).toBe(false)
     })

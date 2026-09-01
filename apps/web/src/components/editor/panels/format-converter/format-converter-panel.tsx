@@ -4,7 +4,7 @@
  * 提供视频格式转换的 UI 界面
  */
 
-import { useTranslations } from 'next-intl'
+import { useTranslation } from '@i18next-toolkit/nextjs-approuter'
 import { useState, useCallback } from 'react'
 import { FormatDetector } from './format-detector'
 import { ConversionProgress } from './conversion-progress'
@@ -21,7 +21,7 @@ interface FormatConverterPanelProps {
 export function FormatConverterPanel({
   onConvertComplete,
 }: FormatConverterPanelProps) {
-  const t = useTranslations('formatConverter')
+  const { t } = useTranslation()
 
   // 状态
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -119,14 +119,14 @@ export function FormatConverterPanel({
   return (
     <div className="format-converter-panel">
       <div className="panel-header">
-        <h3>{t('title')}</h3>
-        <p className="panel-description">{t('description')}</p>
+        <h3>{t('formatConverter.title')}</h3>
+        <p className="panel-description">{t('formatConverter.description')}</p>
       </div>
 
       <div className="panel-content">
         {/* 文件选择 */}
         <div className="form-group">
-          <label htmlFor="file-input">{t('selectFile')}</label>
+          <label htmlFor="file-input">{t('formatConverter.selectFile')}</label>
           <input
             id="file-input"
             type="file"
@@ -144,14 +144,14 @@ export function FormatConverterPanel({
         {/* 格式检测 */}
         {fileName && (
           <div className="form-group">
-            <label>{t('formatDetection')}</label>
+            <label>{t('formatConverter.formatDetection')}</label>
             <FormatDetector fileName={fileName} onDetect={handleDetect} />
           </div>
         )}
 
         {/* 输出格式 */}
         <div className="form-group">
-          <label htmlFor="output-format">{t('outputFormat')}</label>
+          <label htmlFor="output-format">{t('formatConverter.outputFormat')}</label>
           <select
             id="output-format"
             value={outputFormat}
@@ -166,7 +166,7 @@ export function FormatConverterPanel({
 
         {/* 质量预设 */}
         <div className="form-group">
-          <label htmlFor="quality">{t('quality')}</label>
+          <label htmlFor="quality">{t('formatConverter.quality')}</label>
           <select
             id="quality"
             value={quality}
@@ -174,10 +174,10 @@ export function FormatConverterPanel({
             className="select-input"
             disabled={progress.status === 'converting'}
           >
-            <option value="low">{t('qualityLow')}</option>
-            <option value="medium">{t('qualityMedium')}</option>
-            <option value="high">{t('qualityHigh')}</option>
-            <option value="very_high">{t('qualityVeryHigh')}</option>
+            <option value="low">{t('formatConverter.qualityLow')}</option>
+            <option value="medium">{t('formatConverter.qualityMedium')}</option>
+            <option value="high">{t('formatConverter.qualityHigh')}</option>
+            <option value="very_high">{t('formatConverter.qualityVeryHigh')}</option>
           </select>
         </div>
 
@@ -190,14 +190,14 @@ export function FormatConverterPanel({
               onChange={(e) => setIncludeAudio(e.target.checked)}
               disabled={progress.status === 'converting'}
             />
-            <span>{t('includeAudio')}</span>
+            <span>{t('formatConverter.includeAudio')}</span>
           </label>
         </div>
 
         {/* 转换进度 */}
         {progress.file && progress.status !== 'idle' && (
           <div className="form-group">
-            <label>{t('conversionProgress')}</label>
+            <label>{t('formatConverter.conversionProgress')}</label>
             <ConversionProgress
               fileName={progress.file}
               progress={progress.progress}
@@ -214,7 +214,7 @@ export function FormatConverterPanel({
             disabled={!selectedFile || progress.status === 'converting'}
             className="btn-primary"
           >
-            {progress.status === 'converting' ? t('converting') : t('convert')}
+            {progress.status === 'converting' ? t('formatConverter.converting') : t('formatConverter.convert')}
           </button>
 
           <button
@@ -222,7 +222,7 @@ export function FormatConverterPanel({
             disabled={progress.status === 'converting'}
             className="btn-secondary"
           >
-            {t('reset')}
+            {t('formatConverter.reset')}
           </button>
         </div>
       </div>

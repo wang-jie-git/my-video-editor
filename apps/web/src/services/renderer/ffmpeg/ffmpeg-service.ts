@@ -4,7 +4,7 @@
  * 封装 FFmpeg.wasm 的核心操作，提供易用的 API
  */
 
-import type { FFmpegConfig, FFmpegExecResult, FFmpegProgressCallback, FFmpegFileInfo } from './types'
+import type { FFmpegConfig, FFmpegFileInfo, FFmpegExecResult, FFmpegProgressCallback } from './types'
 import { FFmpegLoader } from './ffmpeg-loader'
 
 export class FFmpegService {
@@ -55,7 +55,7 @@ export class FFmpegService {
 
     // 设置进度监听器
     if (options?.onProgress) {
-      ffmpeg.on('progress', ({ progress }) => {
+      ffmpeg.on('progress', ({ progress }: { progress: number }) => {
         options.onProgress!({
           progress,
           time: Date.now() - startTime,
@@ -114,10 +114,10 @@ export class FFmpegService {
   async listDir(path: string = '.'): Promise<FFmpegFileInfo[]> {
     const ffmpeg = this.loader.getFFmpeg()
     const files = await ffmpeg.listDir(path)
-    return files.map((file) => ({
+    return files.map((file: { name: string; isDir: boolean }) => ({
       name: file.name,
-      size: file.size,
-      isDirectory: file.type === 'directory',
+      size: 0,
+      isDirectory: file.isDir,
     }))
   }
 
@@ -161,8 +161,8 @@ export class FFmpegService {
       const ffmpeg = this.loader.getFFmpeg()
       const files = await ffmpeg.listDir('.')
       await Promise.all(
-        files.map((file) => {
-          if (file.type === 'directory') {
+        files.map((file: { name: string; isDir: boolean }) => {
+          if (file.isDir) {
             return this.cleanupDir(file.name)
           }
           return this.deleteFile(file.name)
@@ -182,9 +182,9 @@ export class FFmpegService {
     try {
       const files = await ffmpeg.listDir(dir)
       await Promise.all(
-        files.map((file) => {
+        files.map((file: { name: string; isDir: boolean }) => {
           const path = `${dir}/${file.name}`
-          if (file.type === 'directory') {
+          if (file.isDir) {
             return this.cleanupDir(path)
           }
           return this.deleteFile(path)

@@ -171,6 +171,7 @@ export class Reverb {
       preDelay: options.preDelay ?? 15,
       wetMix: options.wetMix ?? 0.3,
       dryMix: options.dryMix ?? 0.7,
+      preset: options.preset ?? 'off',
     }
 
     // 应用预设（如果指定）

@@ -146,20 +146,20 @@ describe("FFmpeg 视频工具（结构验证）", () => {
 			const tool = tools.find((t) => t.name === "merge_videos");
 			expect(tool?.parameters.properties.includeAudio).toBeDefined();
 			expect(tool?.parameters.properties.reencode).toBeDefined();
-			expect(tool?.parameters.properties.includeAudio.default).toBe(true);
-			expect(tool?.parameters.properties.reencode.default).toBe(false);
+			expect(tool?.parameters.properties.includeAudio!.default).toBe(true);
+			expect(tool?.parameters.properties.reencode!.default).toBe(false);
 		});
 
 		test("concat_with_transitions 应该支持 fade, slide, wipe, dissolve 转场类型", () => {
 			const tool = tools.find((t) => t.name === "concat_with_transitions");
-			const transitionType = tool?.parameters.properties.transitions.items.properties.type;
-			expect(transitionType.enum).toEqual(["fade", "slide", "wipe", "dissolve"]);
+			const transitionType = tool?.parameters.properties.transitions!.items.properties.type;
+			expect(transitionType!.enum).toEqual(["fade", "slide", "wipe", "dissolve"]);
 		});
 
 		test("trim_video 应该支持可选参数 reencode", () => {
 			const tool = tools.find((t) => t.name === "trim_video");
 			expect(tool?.parameters.properties.reencode).toBeDefined();
-			expect(tool?.parameters.properties.reencode.default).toBe(false);
+			expect(tool?.parameters.properties.reencode!.default).toBe(false);
 		});
 	});
 

@@ -4,7 +4,7 @@
  * 提供视频分割的 UI 界面
  */
 
-import { useTranslations } from "next-intl";
+import { useTranslation } from '@i18next-toolkit/nextjs-approuter';
 import { useState, useCallback } from "react";
 import type { VideoListEntry } from "./types";
 
@@ -29,7 +29,7 @@ export function VideoSplitPanel({
   videos: externalVideos,
   onSelectVideo,
 }: VideoSplitPanelProps) {
-  const t = useTranslations("videoComposer");
+  const { t } = useTranslation();
 
   // 状态
   const [videos] = useState<VideoListEntry[]>(externalVideos || []);
@@ -179,16 +179,16 @@ export function VideoSplitPanel({
   return (
     <div className="video-split-panel">
       <div className="panel-header">
-        <h3>{t("splitTitle") || "视频分割"}</h3>
+        <h3>{t('videoComposer.splitTitle') || "视频分割"}</h3>
         <p className="panel-description">
-          {t("splitDescription") || "将视频分割为多个片段"}
+          {t('videoComposer.splitDescription') || "将视频分割为多个片段"}
         </p>
       </div>
 
       <div className="panel-content">
         {/* 视频选择 */}
         <div className="form-group">
-          <label htmlFor="video-select">{t("selectVideo") || "选择视频"}</label>
+          <label htmlFor="video-select">{t('videoComposer.selectVideo') || "选择视频"}</label>
           <select
             id="video-select"
             value={selectedVideoId || ""}
@@ -197,7 +197,7 @@ export function VideoSplitPanel({
             disabled={isProcessing}
           >
             <option value="">
-              {t("selectVideoPlaceholder") || "请选择视频..."}
+              {t('videoComposer.selectVideoPlaceholder') || "请选择视频..."}
             </option>
             {videos.map((video) => (
               <option key={video.id} value={video.id}>
@@ -212,7 +212,7 @@ export function VideoSplitPanel({
           <>
             <div className="form-group">
               <label htmlFor="split-points">
-                {t("splitPoints") || "分割点（秒）"}
+                {t('videoComposer.splitPoints') || "分割点（秒）"}
               </label>
               <input
                 id="split-points"
@@ -224,34 +224,34 @@ export function VideoSplitPanel({
                 disabled={isProcessing}
               />
               <p className="help-text">
-                {t("splitPointsHelp") || "多个分割点用逗号分隔"}
+                {t('videoComposer.splitPointsHelp') || "多个分割点用逗号分隔"}
               </p>
             </div>
 
             {/* 快速分割 */}
             <div className="form-group">
-              <label>{t("quickSplit") || "快速分割"}</label>
+              <label>{t('videoComposer.quickSplit') || "快速分割"}</label>
               <div className="quick-split-buttons">
                 <button
                   onClick={() => handleQuickSplit(10)}
                   disabled={isProcessing}
                   className="btn-quick"
                 >
-                  {t("every") || "每隔"} 10s
+                  {t('videoComposer.every') || "每隔"} 10s
                 </button>
                 <button
                   onClick={() => handleQuickSplit(30)}
                   disabled={isProcessing}
                   className="btn-quick"
                 >
-                  {t("every") || "每隔"} 30s
+                  {t('videoComposer.every') || "每隔"} 30s
                 </button>
                 <button
                   onClick={() => handleQuickSplit(60)}
                   disabled={isProcessing}
                   className="btn-quick"
                 >
-                  {t("every") || "每隔"} 60s
+                  {t('videoComposer.every') || "每隔"} 60s
                 </button>
               </div>
             </div>
@@ -259,7 +259,7 @@ export function VideoSplitPanel({
             {/* 分割点列表 */}
             {parseSplitPoints().length > 0 && (
               <div className="form-group">
-                <label>{t("splitPointsList") || "分割点列表"}</label>
+                <label>{t('videoComposer.splitPointsList') || "分割点列表"}</label>
                 <div className="split-points-list">
                   {parseSplitPoints().map((point, index) => (
                     <div key={index} className="split-point-item">
@@ -283,7 +283,7 @@ export function VideoSplitPanel({
             {/* 输出设置 */}
             <div className="form-group">
               <label htmlFor="output-prefix">
-                {t("outputPrefix") || "输出文件前缀"}
+                {t('videoComposer.outputPrefix') || "输出文件前缀"}
               </label>
               <input
                 id="output-prefix"
@@ -297,7 +297,7 @@ export function VideoSplitPanel({
 
             <div className="form-group">
               <label htmlFor="output-format">
-                {t("outputFormat") || "输出格式"}
+                {t('videoComposer.outputFormat') || "输出格式"}
               </label>
               <select
                 id="output-format"
@@ -318,7 +318,7 @@ export function VideoSplitPanel({
         {/* 进度显示 */}
         {progress.phase !== "idle" && (
           <div className="form-group">
-            <label>{t("progress") || "进度"}</label>
+            <label>{t('videoComposer.progress') || "进度"}</label>
             <div className="progress-bar">
               <div
                 className="progress-fill"
@@ -327,10 +327,10 @@ export function VideoSplitPanel({
             </div>
             <span className="progress-text">
               {progress.phase === "complete"
-                ? `${t("complete") || "完成"} (${progress.total} ${t("segments") || "个片段"})`
+                ? `${t('videoComposer.complete') || "完成"} (${progress.total} ${t('videoComposer.segments') || "个片段"})`
                 : progress.phase === "error"
-                  ? t("error") || "错误"
-                  : `${t("processing") || "处理中..."} ${progress.current}/${progress.total}`}
+                  ? t('videoComposer.error') || "错误"
+                  : `${t('videoComposer.processing') || "处理中..."} ${progress.current}/${progress.total}`}
             </span>
           </div>
         )}
@@ -345,8 +345,8 @@ export function VideoSplitPanel({
             className="btn-primary"
           >
             {isProcessing
-              ? t("splitting") || "分割中..."
-              : t("split") || "分割视频"}
+              ? t('videoComposer.splitting') || "分割中..."
+              : t('videoComposer.split') || "分割视频"}
           </button>
         </div>
       </div>

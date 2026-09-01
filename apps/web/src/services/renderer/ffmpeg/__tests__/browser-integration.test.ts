@@ -5,7 +5,7 @@
  * 可以保存为 HTML 文件在浏览器中打开
  */
 
-import { FFmpegService } from './ffmpeg-service'
+import { FFmpegService } from '../ffmpeg-service'
 
 async function runTests() {
   console.log('=== FFmpeg.wasm Phase 1 浏览器集成测试 ===\n')

@@ -4,7 +4,7 @@
  * 展示如何使用 FilterPipeline 和各种滤镜
  */
 
-import { FFmpegService } from './ffmpeg/ffmpeg-service'
+import { FFmpegService } from '@/services/renderer/ffmpeg/ffmpeg-service'
 import {
   FilterPipeline,
   ColorCorrection,

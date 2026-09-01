@@ -19,7 +19,7 @@ async function initFFmpeg(): Promise<void> {
 
   console.log('[FFmpegWorker] 初始化...')
 
-  ffmpeg = new FFmpeg({ useWorker: false })
+  ffmpeg = new FFmpeg()
 
   // 日志
   ffmpeg.on('log', ({ message }) => {
@@ -27,11 +27,11 @@ async function initFFmpeg(): Promise<void> {
   })
 
   // 进度
-  ffmpeg.on('progress', ({ progress, time, fps, size, bitrate }) => {
+  ffmpeg.on('progress', ({ progress, time }) => {
     self.postMessage({
       type: 'progress',
       id: '',
-      payload: { progress, time, fps, size, bitrate },
+      payload: { progress, time, fps: 0, size: 0, bitrate: 0 },
     } as FFmpegWorkerResponse)
   })
 
@@ -124,7 +124,7 @@ self.onmessage = async (event: MessageEvent<FFmpegWorkerMessage>) => {
         const files = await ffmpeg.listDir('.')
         await Promise.all(
           files.map((file) => {
-            const path = file.type === 'directory' ? file.name : file.name
+            const path = file.isDir ? file.name : file.name
             return ffmpeg!.deleteFile(path).catch(console.warn)
           })
         )

@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'bun:test'
 import { FilterPipeline } from '../filter-pipeline'
-import type { FFmpegService } from '../ffmpeg-service'
+import type { FFmpegService } from '../../ffmpeg/ffmpeg-service'
 import type {
   FilterChain,
   ColorCorrectionFilter,
@@ -14,14 +14,15 @@ import type {
 } from '../filter-types'
 
 // Mock FFmpegService
-const createMockFFmpegService = (): FFmpegService => ({
-  load: async () => {},
-  exec: async () => {},
-  writeFile: async () => {},
-  readFile: async () => new Uint8Array(1024),
-  deleteFile: async () => {},
-  isLoaded: () => true,
-})
+const createMockFFmpegService = () =>
+  ({
+    load: async () => {},
+    exec: async () => {},
+    writeFile: async () => {},
+    readFile: async () => new Uint8Array(1024),
+    deleteFile: async () => {},
+    isLoaded: () => true,
+  } as unknown as FFmpegService)
 
 describe('FilterPipeline', () => {
   let pipeline: FilterPipeline
@@ -182,8 +183,9 @@ describe('FilterPipeline', () => {
       const chain = pipeline.createFilterChain([filter])
       const newChain = pipeline.updateFilter(chain, 'filter-1', { brightness: 0.5 })
 
-      expect(newChain.filters[0].brightness).toBe(0.5)
-      expect(newChain.filters[0].contrast).toBe(1) // 其他参数不变
+      const updated0 = newChain.filters[0] as ColorCorrectionFilter
+      expect(updated0.brightness).toBe(0.5)
+      expect(updated0.contrast).toBe(1) // 其他参数不变
     })
 
     it('应该支持更新多个参数', () => {
@@ -206,9 +208,10 @@ describe('FilterPipeline', () => {
         saturation: 1.1,
       })
 
-      expect(newChain.filters[0].brightness).toBe(0.2)
-      expect(newChain.filters[0].contrast).toBe(1.3)
-      expect(newChain.filters[0].saturation).toBe(1.1)
+      const updated1 = newChain.filters[0] as ColorCorrectionFilter
+      expect(updated1.brightness).toBe(0.2)
+      expect(updated1.contrast).toBe(1.3)
+      expect(updated1.saturation).toBe(1.1)
     })
   })
 
@@ -605,12 +608,12 @@ describe('FilterPipeline', () => {
 
     it('应该在部分失败时继续处理其他文件', async () => {
       let callCount = 0
-      mockFFmpegService.exec = async () => {
+      mockFFmpegService.exec = (async () => {
         callCount++
         if (callCount === 2) {
           throw new Error('第 2 个文件失败')
         }
-      }
+      }) as unknown as FFmpegService['exec']
 
       const chain = pipeline.createFilterChain([{
         id: 'filter-1',

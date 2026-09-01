@@ -9,6 +9,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import type { FFmpegService } from '@/services/renderer/ffmpeg/ffmpeg-service'
 
 export default function FFmpegTestPage() {
   const [results, setResults] = useState<any>(null)
@@ -93,10 +94,11 @@ export default function FFmpegTestPage() {
       console.error('测试失败:', error)
 
       // 提供更友好的错误信息
-      let errorMessage = error.message
-      if (error.message.includes('Failed to fetch')) {
+      const err = error instanceof Error ? error : new Error(String(error))
+      let errorMessage = err.message
+      if (err.message.includes('Failed to fetch')) {
         errorMessage = '网络错误：无法下载 FFmpeg 核心文件。请检查：\n1. 网络连接是否正常\n2. 是否可以访问 unpkg.com\n3. 是否被防火墙或代理阻止'
-      } else if (error.message.includes('timeout')) {
+      } else if (err.message.includes('timeout')) {
         errorMessage = '加载超时：FFmpeg 下载时间过长，请检查网络速度'
       }
 

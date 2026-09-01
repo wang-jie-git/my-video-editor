@@ -59,63 +59,6 @@ export default function FFmpegExportTestPage() {
 		})
 	}
 
-	const runFullExportTest = useCallback(async () => {
-		addLog('🎬 开始完整导出流程测试...', 'info')
-		addLog('📋 步骤 1/2: Canvas 渲染', 'info')
-
-		setLoading(true)
-		setProgress(0)
-		setResults(null)
-
-		try {
-			// 步骤 1: Canvas 渲染
-			const canvasResult = await runCanvasTest()
-			setProgress(50)
-			addLog('✅ Canvas 渲染测试通过', 'success')
-
-			if (!canvasResult.success) {
-				throw new Error('Canvas 渲染失败')
-			}
-
-			// 步骤 2: FFmpeg 编码
-			addLog('📋 步骤 2/2: FFmpeg 编码', 'info')
-			const ffmpegResult = await runFFmpegEncodeTest()
-			setProgress(100)
-
-			if (!ffmpegResult.success) {
-				throw new Error('FFmpeg 编码失败')
-			}
-
-			// 完成
-			const totalDuration = (canvasResult?.duration || 0) + (ffmpegResult?.duration || 0)
-
-			addLog('', 'info')
-			addLog('🎉 完整导出流程测试通过！', 'success')
-			addLog(`⏱️ 总耗时: ${totalDuration.toFixed(0)}ms`, 'info')
-			addLog(`📦 输出大小: ${(ffmpegResult.outputSize / 1024).toFixed(2)} KB`, 'info')
-			addLog('📹 格式: MP4 (H.264)', 'info')
-			addLog('', 'info')
-			addLog('✨ Canvas → PNG → FFmpeg → MP4 流程验证成功！', 'success')
-
-			setResults({
-				success: true,
-				canvas: canvasResult,
-				ffmpeg: ffmpegResult,
-				total: {
-					duration: totalDuration,
-					outputSize: ffmpegResult.outputSize,
-					format: 'MP4 (H.264)',
-				},
-			})
-		} catch (error) {
-			const message = error instanceof Error ? error.message : String(error)
-			addLog(`❌ 测试失败: ${message}`, 'error')
-			setResults({ success: false, error: message })
-		} finally {
-			setLoading(false)
-		}
-	}, [runCanvasTest, runFFmpegEncodeTest, addLog])
-
 	const runCanvasTest = useCallback(async () => {
 		addLog('🎨 开始 Canvas 渲染测试...', 'info')
 
@@ -311,6 +254,63 @@ export default function FFmpegExportTestPage() {
 			return { success: false, error: message }
 		}
 	}, [addLog, ffmpegLoaded])
+	const runFullExportTest = useCallback(async () => {
+		addLog('🎬 开始完整导出流程测试...', 'info')
+		addLog('📋 步骤 1/2: Canvas 渲染', 'info')
+
+		setLoading(true)
+		setProgress(0)
+		setResults(null)
+
+		try {
+			// 步骤 1: Canvas 渲染
+			const canvasResult = await runCanvasTest()
+			setProgress(50)
+			addLog('✅ Canvas 渲染测试通过', 'success')
+
+			if (!canvasResult.success) {
+				throw new Error('Canvas 渲染失败')
+			}
+
+			// 步骤 2: FFmpeg 编码
+			addLog('📋 步骤 2/2: FFmpeg 编码', 'info')
+			const ffmpegResult = await runFFmpegEncodeTest()
+			setProgress(100)
+
+			if (!ffmpegResult.success) {
+				throw new Error('FFmpeg 编码失败')
+			}
+
+			// 完成
+			const totalDuration = (canvasResult?.duration || 0) + (ffmpegResult?.duration || 0)
+
+			addLog('', 'info')
+			addLog('🎉 完整导出流程测试通过！', 'success')
+			addLog(`⏱️ 总耗时: ${totalDuration.toFixed(0)}ms`, 'info')
+			addLog(`📦 输出大小: ${(ffmpegResult.outputSize / 1024).toFixed(2)} KB`, 'info')
+			addLog('📹 格式: MP4 (H.264)', 'info')
+			addLog('', 'info')
+			addLog('✨ Canvas → PNG → FFmpeg → MP4 流程验证成功！', 'success')
+
+			setResults({
+				success: true,
+				canvas: canvasResult,
+				ffmpeg: ffmpegResult,
+				total: {
+					duration: totalDuration,
+					outputSize: ffmpegResult.outputSize,
+					format: 'MP4 (H.264)',
+				},
+			})
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error)
+			addLog(`❌ 测试失败: ${message}`, 'error')
+			setResults({ success: false, error: message })
+		} finally {
+			setLoading(false)
+		}
+	}, [runCanvasTest, runFFmpegEncodeTest, addLog])
+
 
 	return (
 		<div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>

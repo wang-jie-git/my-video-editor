@@ -44,7 +44,7 @@ describe('FormatConverter 集成测试', () => {
       for (const testCase of testCases) {
         const result = converter.detectFormat(testCase.file)
 
-        expect(result.format).toBe(testCase.expectedFormat)
+        expect(result.format as string).toBe(testCase.expectedFormat)
         expect(result.isVideo).toBe(testCase.expectedVideo)
         expect(result.supported).toBe(testCase.expectedSupported)
 
@@ -65,7 +65,7 @@ describe('FormatConverter 集成测试', () => {
         const result = converter.detectFormat(fileName)
         const expectedExt = fileName.split('.').pop()!.toLowerCase()
 
-        expect(result.format).toBe(expectedExt)
+        expect(result.format as string).toBe(expectedExt)
         expect(result.isVideo).toBe(true)
         expect(result.supported).toBe(true)
       }
@@ -219,7 +219,7 @@ describe('FormatConverter 集成测试', () => {
       ]
 
       for (const conversion of conversionMatrix) {
-        const outputFile = converter.changeFileExtension(conversion.input, conversion.outputFormat)
+        const outputFile = (converter as any).changeFileExtension(conversion.input, conversion.outputFormat)
 
         const args = (converter as any).buildConvertArgs({
           inputFile: conversion.input,
@@ -306,7 +306,7 @@ describe('FormatConverter 集成测试', () => {
         const result = converter.detectFormat(fileName)
         const expectedExt = fileName.split('.').pop()!
 
-        expect(result.format).toBe(expectedExt)
+        expect(result.format as string).toBe(expectedExt)
         expect(result.isVideo).toBe(true)
       }
     })
@@ -328,7 +328,7 @@ describe('FormatConverter 集成测试', () => {
 
     it('应该处理未知格式', () => {
       const result = converter.detectFormat('file.xyz')
-      expect(result.format).toBe('xyz')
+      expect(result.format as string).toBe('xyz')
       expect(result.isVideo).toBe(false)
       expect(result.supported).toBe(false)
     })  })

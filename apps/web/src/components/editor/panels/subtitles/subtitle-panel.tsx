@@ -10,6 +10,7 @@ import { SubtitlePipeline } from '@/services/renderer/subtitles'
 import { FFmpegService } from '@/services/renderer/ffmpeg/ffmpeg-service'
 import { SubtitleTrackList } from './subtitle-track-list'
 import { SubtitleStyleEditor } from './subtitle-style-editor'
+import { SubtitleEditor } from './subtitle-editor'
 import { SubtitlePreview } from './subtitle-preview'
 import { SubtitleBatchOperations } from './subtitle-batch-operations'
 import styles from './subtitle-panel.module.css'
@@ -244,7 +245,7 @@ export function SubtitlePanel({
         <SubtitleTrackList
           tracks={tracks}
           selectedTrackId={selectedTrackId}
-          selectedSubtitleId={selectedSubtitleId}
+          selectedSubtitleId={selectedSubtitleId ?? undefined}
           onTrackSelect={handleTrackSelect}
           onSubtitleSelect={handleSubtitleSelect}
           onAddTrack={handleAddTrack}
@@ -297,7 +298,7 @@ export function SubtitlePanel({
                 <div className={styles.subtitleEditorSection}>
                   <SubtitleEditor
                     subtitle={selectedSubtitle}
-                    onSave={(updates) => {
+                    onSave={(updates: Partial<Subtitle>) => {
                       handleUpdateSubtitle(selectedSubtitle.id, updates)
                       setIsEditing(false)
                     }}

@@ -76,9 +76,9 @@ async function example1c_customEqualizer() {
 
   // 自定义频段配置
   const customBands = [
-    { frequency: 100, gain: 4, q: 1 },
-    { frequency: 1000, gain: 2, q: 1 },
-    { frequency: 5000, gain: -2, q: 1 },
+    { frequency: 100, gain: 4, q: 1, enabled: true },
+    { frequency: 1000, gain: 2, q: 1, enabled: true },
+    { frequency: 5000, gain: -2, q: 1, enabled: true },
   ]
 
   const equalizer = createEqualizer(audioContext, {
@@ -258,7 +258,6 @@ async function example4a_createEffectsChain() {
 
   const audioContext = new AudioContext()
   const { AudioEffectsChain } = await import('./audio-processor')
-  const { createEqualizer, createCompressor, createReverb } = await import('./audio-processor')
 
   // 创建效果链
   const chain = new AudioEffectsChain(audioContext)

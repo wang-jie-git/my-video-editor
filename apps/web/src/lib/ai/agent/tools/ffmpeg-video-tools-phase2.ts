@@ -274,16 +274,16 @@ Returns:
 
 			return {
 				success: true,
-				message: `Video info: ${info.width}x${info.height}, ${info.duration.toFixed(2)}s, ${info.frameRate} fps`,
+				message: `Video info: ${info.width}x${info.height}, ${info.duration.toFixed(2)}s, ${info.fps} fps`,
 				data: {
 					fileName: info.fileName,
 					width: info.width,
 					height: info.height,
 					duration: info.duration,
-					frameRate: info.frameRate,
-					codec: info.codec,
-					bitrate: info.bitrate,
-					fileSize: info.fileSize,
+					fps: info.fps,
+					codec: info.videoCodec,
+					audioCodec: info.audioCodec,
+					fileSize: info.size,
 					hasAudio: info.hasAudio,
 				},
 			};

@@ -4,7 +4,7 @@
  * 显示格式转换的实时进度
  */
 
-import { useTranslations } from 'next-intl'
+import { useTranslation } from '@i18next-toolkit/nextjs-approuter'
 
 interface ConversionProgressProps {
   /** 当前文件 */
@@ -26,15 +26,15 @@ export function ConversionProgress({
   status,
   error,
 }: ConversionProgressProps) {
-  const t = useTranslations('formatConverter')
+  const { t } = useTranslation()
 
   // 状态映射
   const statusConfig = {
-    idle: { label: t('statusIdle'), color: 'var(--text-muted)' },
-    detecting: { label: t('statusDetecting'), color: 'var(--accent-primary)' },
-    converting: { label: t('statusConverting'), color: 'var(--accent-primary)' },
-    completed: { label: t('statusCompleted'), color: 'rgb(34, 197, 94)' },
-    error: { label: t('statusError'), color: 'rgb(239, 68, 68)' },
+    idle: { label: t('formatConverter.statusIdle'), color: 'var(--text-muted)' },
+    detecting: { label: t('formatConverter.statusDetecting'), color: 'var(--accent-primary)' },
+    converting: { label: t('formatConverter.statusConverting'), color: 'var(--accent-primary)' },
+    completed: { label: t('formatConverter.statusCompleted'), color: 'rgb(34, 197, 94)' },
+    error: { label: t('formatConverter.statusError'), color: 'rgb(239, 68, 68)' },
   }
 
   const config = statusConfig[status]

@@ -255,11 +255,11 @@ describe('Compressor', () => {
 
     comp.applyPreset('vocal')
     let options = comp.getOptions()
-    expect(options.threshold).toBe(COMPRESSOR_PRESETS.vocal.options.threshold)
+    expect(options.threshold).toBe(COMPRESSOR_PRESETS.vocal.options.threshold!)
 
     comp.applyPreset('podcast')
     options = comp.getOptions()
-    expect(options.ratio).toBe(COMPRESSOR_PRESETS.podcast.options.ratio)
+    expect(options.ratio).toBe(COMPRESSOR_PRESETS.podcast.options.ratio!)
 
     comp.dispose()
   })

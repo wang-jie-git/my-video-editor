@@ -12,7 +12,7 @@ import type {
   VideoMergeUIConfig,
   VideoSplitUIConfig,
   VideoTrimUIConfig,
-} from "../../../services/renderer/video-composer/types";
+} from "@/services/renderer/video-composer/types";
 
 // 测试 UI 类型
 import type {
@@ -21,7 +21,7 @@ import type {
   VideoSplitUIConfig as UIVideoSplitUIConfig,
   VideoTrimUIConfig as UIVideoTrimUIConfig,
   Transition,
-} from "./types";
+} from "../types";
 
 // Mock test data
 const mockVideoListEntry: VideoListEntry = {
@@ -144,7 +144,7 @@ describe("Transition 类型验证", () => {
 describe("类型兼容性", () => {
   test("VideoListEntry 应该兼容 VideoListItem", () => {
     // 验证 UI 类型可以映射到服务层类型
-    const serviceType: import("../../../services/renderer/video-composer/types").VideoListItem =
+    const serviceType: import("@/services/renderer/video-composer/types").VideoListItem =
       {
         id: mockVideoListEntry.id,
         fileName: mockVideoListEntry.fileName,

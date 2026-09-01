@@ -29,18 +29,19 @@ export default function FFmpegTestPage() {
 
     try {
       // 使用内联函数来完全避免 Next.js 模块解析
-      const loadAndTest = async () => {
+      const loadAndTest = async (): Promise<any> => {
         // 动态导入 - 使用完整的 CDN URL
         addLog('从 CDN 加载 FFmpeg...')
 
         const createFFmpeg = async () => {
-          // 使用 eval 来完全绕过静态分析
+          // 使用 new Function 间接 import 来完全绕过静态分析（Turbopack 无法解析 blob URL）
+          const dynamicImport = new Function('u', 'return import(u)')
           const loadModule = async (url: string) => {
             const response = await fetch(url)
             const text = await response.text()
             // 使用 blob URL 来避免模块解析
             const blob = new Blob([text], { type: 'application/javascript' })
-            return import(URL.createObjectURL(blob))
+            return dynamicImport(URL.createObjectURL(blob))
           }
 
           const [ffmpegModule, utilModule] = await Promise.all([
@@ -99,7 +100,7 @@ export default function FFmpegTestPage() {
         const formats = result.stdout.split('\n')
           .filter((l: string) => l.includes('E') && (l.includes('mp4') || l.includes('mov') || l.includes('avi')))
           .slice(0, 10)
-        testResults.formats = { formats: formats.map(f => f.trim()) }
+        testResults.formats = { formats: formats.map((f: string) => f.trim()) }
         addLog('✅ 格式测试通过', 'success')
       } catch (e: any) {
         testResults.formats = { error: e.message }
@@ -113,7 +114,7 @@ export default function FFmpegTestPage() {
         const codecs = result.stdout.split('\n')
           .filter((l: string) => l.includes('E') && (l.includes('h264') || l.includes('vp9')))
           .slice(0, 10)
-        testResults.codecs = { codecs: codecs.map(c => c.trim()) }
+        testResults.codecs = { codecs: codecs.map((c: string) => c.trim()) }
         addLog('✅ 编解码器测试通过', 'success')
       } catch (e: any) {
         testResults.codecs = { error: e.message }
@@ -127,7 +128,7 @@ export default function FFmpegTestPage() {
         const filters = result.stdout.split('\n')
           .filter((l: string) => l.includes('V') && (l.includes('eq') || l.includes('blur') || l.includes('unsharp') || l.includes('lut3d')))
           .slice(0, 15)
-        testResults.filters = { filters: filters.map(f => f.trim()) }
+        testResults.filters = { filters: filters.map((f: string) => f.trim()) }
         addLog('✅ 滤镜测试通过', 'success')
       } catch (e: any) {
         testResults.filters = { error: e.message }

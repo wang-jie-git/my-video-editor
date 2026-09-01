@@ -65,7 +65,7 @@ export class FilterPipeline {
     return {
       ...chain,
       filters: chain.filters.map((f) =>
-        f.id === filterId ? { ...f, ...updates } : f
+        f.id === filterId ? { ...f, ...updates } as VideoFilter : f
       ),
     }
   }
@@ -239,7 +239,7 @@ export class FilterPipeline {
           '-i', inputFile,
           '-c:v', 'copy',
           '-y', outputFile,
-        ], { onProgress })
+        ], { onProgress: onProgress ? (p) => onProgress(p.progress) : undefined })
       } else {
         // 应用滤镜
         await this.ffmpegService.exec([
@@ -249,7 +249,7 @@ export class FilterPipeline {
           '-crf', '23',
           '-pix_fmt', 'yuv420p',
           '-y', outputFile,
-        ], { onProgress })
+        ], { onProgress: onProgress ? (p) => onProgress(p.progress) : undefined })
       }
 
       // 2. 读取输出文件

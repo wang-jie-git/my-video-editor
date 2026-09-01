@@ -668,7 +668,7 @@ Loudness standards:
 			}
 
 			// 应用响度标准化
-			const normalizeFilter = `loudnorm=I=${targetLoudness}:TP=${truePeek}:LRA=7`;
+			const normalizeFilter = `loudnorm=I=${targetLoudness}:TP=${truePeak}:LRA=7`;
 
 			await ffmpegService.exec([
 				"-i", audioFile,

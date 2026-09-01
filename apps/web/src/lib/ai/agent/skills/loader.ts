@@ -13,23 +13,28 @@
  * tags: [a, b]
  * ---
  * 技能正文（markdown 指令）
+ *
+ * ⚠️ Node 专用：readdir/readFile/path 均改为函数内动态导入，
+ *    避免顶层 node: 导入被 Client 打包链静态解析（与 MCP 模式一致）。
  */
-import { readdir, readFile } from "node:fs/promises";
-import path from "node:path";
 import { getSkillRegistry } from "./registry";
 import type { SkillDefinition } from "./types";
 
-/** 内置技能目录 */
-export const BUNDLED_SKILLS_DIR = path.join(
-	process.cwd(),
-	"src/lib/ai/agent/skills/bundled",
-);
+/** 内置技能目录（相对项目根） */
+const BUNDLED_SKILLS_REL = "src/lib/ai/agent/skills/bundled";
 
-/** 用户技能目录（按优先级） */
-export const USER_SKILL_DIRS = [
-	path.join(process.cwd(), ".openharness/skills"),
-	path.join(process.cwd(), "skills"),
-];
+/** 用户技能目录（相对项目根，按优先级） */
+const USER_SKILL_DIRS_REL = [".openharness/skills", "skills"];
+
+/** 懒加载 node:fs/promises（仅服务端函数内使用） */
+async function getFs(): Promise<typeof import("node:fs/promises")> {
+	return await import("node:fs/promises");
+}
+
+/** 懒加载 node:path（仅服务端函数内使用） */
+async function getPath(): Promise<typeof import("node:path")> {
+	return await import("node:path");
+}
 
 /**
  * 解析 frontmatter + body
@@ -81,7 +86,9 @@ export async function loadSkillFromFile(
 	source: SkillDefinition["source"],
 ): Promise<SkillDefinition | null> {
 	try {
-		const raw = await readFile(filePath, "utf-8");
+		const fs = await getFs();
+		const path = await getPath();
+		const raw = await fs.readFile(filePath, "utf-8");
 		const fileName = path.basename(filePath, ".md");
 
 		const { name, description, tags, body } =
@@ -110,9 +117,11 @@ export async function loadSkillsFromDir(
 	dir: string,
 	source: SkillDefinition["source"],
 ): Promise<SkillDefinition[]> {
+	const fs = await getFs();
+	const path = await getPath();
 	let entries: string[];
 	try {
-		entries = await readdir(dir);
+		entries = await fs.readdir(dir);
 	} catch {
 		// 目录不存在则跳过
 		return [];
@@ -132,15 +141,19 @@ export async function loadSkillsFromDir(
  * 加载内置技能（bundled）
  */
 export async function loadBundledSkills(): Promise<SkillDefinition[]> {
-	return loadSkillsFromDir(BUNDLED_SKILLS_DIR, "bundled");
+	const path = await getPath();
+	const dir = path.join(process.cwd(), BUNDLED_SKILLS_REL);
+	return loadSkillsFromDir(dir, "bundled");
 }
 
 /**
  * 加载用户/项目技能
  */
 export async function loadExternalSkills(): Promise<SkillDefinition[]> {
+	const path = await getPath();
 	const all: SkillDefinition[] = [];
-	for (const dir of USER_SKILL_DIRS) {
+	for (const rel of USER_SKILL_DIRS_REL) {
+		const dir = path.join(process.cwd(), rel);
 		const dirSkills = await loadSkillsFromDir(dir, "project");
 		all.push(...dirSkills);
 	}

@@ -47,6 +47,7 @@ let mcpTools: AgentTool[] = [];
 
 // Skill 工具（动态加载）
 let skillTools: AgentTool[] = [];
+let skillsInitialized = false;
 
 /**
  * 设置 MCP 工具列表（由 mcp-tools.ts 调用）
@@ -112,6 +113,7 @@ export async function initSkillTools(): Promise<void> {
 		await loadSkillRegistry();
 		setSkillTools(buildSkillTools());
 		refreshToolMap();
+		skillsInitialized = true;
 	} catch (error) {
 		console.error("[Tools] Failed to initialize Skills:", error);
 	}
@@ -121,12 +123,7 @@ export async function initSkillTools(): Promise<void> {
  * 检查 Skills 是否就绪
  */
 export function isSkillsReady(): boolean {
-	try {
-		const { isSkillsReady: check } = require("../skills");
-		return check();
-	} catch {
-		return false;
-	}
+	return skillsInitialized;
 }
 
 /**

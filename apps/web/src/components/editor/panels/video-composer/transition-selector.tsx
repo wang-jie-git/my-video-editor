@@ -4,9 +4,9 @@
  * 提供转场效果类型和时长的选择界面
  */
 
-import { useTranslations } from "next-intl";
+import { useTranslation } from '@i18next-toolkit/nextjs-approuter';
 import { useState } from "react";
-import type { TransitionType } from "../../../services/renderer/video-composer/types";
+import type { TransitionType } from "@/services/renderer/video-composer/types";
 
 export interface TransitionSelectorProps {
   /** 当前转场类型 */
@@ -25,16 +25,16 @@ export function TransitionSelector({
   duration = 1.0,
   onChange,
 }: TransitionSelectorProps) {
-  const t = useTranslations("videoComposer");
+  const { t } = useTranslation();
   const [selectedType, setSelectedType] = useState<TransitionType>(value);
   const [selectedDuration, setSelectedDuration] = useState<number>(duration);
 
   // 转场类型选项
   const transitionTypes: Array<{ value: TransitionType; label: string }> = [
-    { value: "fade", label: t("transitionFade") || "Fade" },
-    { value: "slide", label: t("transitionSlide") || "Slide" },
-    { value: "wipe", label: t("transitionWipe") || "Wipe" },
-    { value: "dissolve", label: t("transitionDissolve") || "Dissolve" },
+    { value: "fade", label: t('videoComposer.transitionFade') || "Fade" },
+    { value: "slide", label: t('videoComposer.transitionSlide') || "Slide" },
+    { value: "wipe", label: t('videoComposer.transitionWipe') || "Wipe" },
+    { value: "dissolve", label: t('videoComposer.transitionDissolve') || "Dissolve" },
   ];
 
   // 时长预设（秒）
@@ -63,7 +63,7 @@ export function TransitionSelector({
     <div className="transition-selector">
       <div className="form-group">
         <label htmlFor="transition-type">
-          {t("transitionType") || "转场类型"}
+          {t('videoComposer.transitionType') || "转场类型"}
         </label>
         <select
           id="transition-type"
@@ -81,7 +81,7 @@ export function TransitionSelector({
 
       <div className="form-group">
         <label htmlFor="transition-duration">
-          {t("transitionDuration") || "转场时长"}
+          {t('videoComposer.transitionDuration') || "转场时长"}
         </label>
         <select
           id="transition-duration"

@@ -13,7 +13,7 @@ export interface TranslationOptions {
   /** 目标语言代码（如 'zh', 'en'） */
   targetLanguage: string
   /** 翻译引擎 */
-  engine?: 'browser' | 'google' | 'azure' | 'deepl' | 'openai'
+  engine?: 'browser' | 'google' | 'azure' | 'deepl' | 'openai' | 'mock'
   /** 是否保留原始文本 */
   keepOriginal?: boolean
   /** API 密钥（用于外部引擎） */

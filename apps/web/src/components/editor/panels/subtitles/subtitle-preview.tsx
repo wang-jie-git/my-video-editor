@@ -5,7 +5,7 @@
  */
 
 import React, { useMemo, useEffect, useState } from 'react'
-import type { SubtitleTrack } from '@/services/renderer/subtitles'
+import type { SubtitleTrack, SubtitleStyle } from '@/services/renderer/subtitles'
 import styles from './subtitle-panel.module.css'
 
 export interface SubtitlePreviewProps {
@@ -19,6 +19,10 @@ export interface SubtitlePreviewProps {
  */
 export function SubtitlePreview({ track, currentTime, onTimeUpdate }: SubtitlePreviewProps) {
   const [isPlaying, setIsPlaying] = useState(false)
+
+  // 追踪当前时间（供动画 interval 使用）
+  const currentTimeRef = React.useRef(currentTime)
+  currentTimeRef.current = currentTime
 
   // 获取当前时间点的字幕
   const currentSubtitle = useMemo(() => {
@@ -34,7 +38,7 @@ export function SubtitlePreview({ track, currentTime, onTimeUpdate }: SubtitlePr
     return {
       ...track.style,
       ...subtitleStyle,
-    } as React.CSSProperties
+    } as SubtitleStyle
   }, [currentSubtitle, track.style])
 
   // 播放/暂停
@@ -53,22 +57,21 @@ export function SubtitlePreview({ track, currentTime, onTimeUpdate }: SubtitlePr
     if (!isPlaying) return
 
     const interval = setInterval(() => {
-      onTimeUpdate((prevTime) => {
-        const maxTime = track.subtitles.length > 0
-          ? Math.max(...track.subtitles.map((s) => s.endTime))
-          : 10
+      const maxTime = track.subtitles.length > 0
+        ? Math.max(...track.subtitles.map((s) => s.endTime))
+        : 10
 
-        if (prevTime >= maxTime) {
-          setIsPlaying(false)
-          return 0
-        }
-
-        return prevTime + 0.1
-      })
+      const next = currentTimeRef.current + 0.1
+      if (next >= maxTime) {
+        setIsPlaying(false)
+        onTimeUpdate(0)
+      } else {
+        onTimeUpdate(next)
+      }
     }, 100)
 
     return () => clearInterval(interval)
-  }, [isPlaying, onTimeUpdate, track.subtitles])
+  }, [isPlaying, track.subtitles, onTimeUpdate])
 
   // 获取最大时间
   const maxTime = useMemo(() => {

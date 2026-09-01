@@ -71,7 +71,7 @@ export class FFmpegLoader {
       const { fetchFile, toBlobURL } = utilModule
 
       // 创建 FFmpeg 实例
-      this.ffmpeg = new FFmpeg({ useWorker: false })
+      this.ffmpeg = new FFmpeg()
 
       // 配置日志
       if (this.config.logLevel !== 'none') {

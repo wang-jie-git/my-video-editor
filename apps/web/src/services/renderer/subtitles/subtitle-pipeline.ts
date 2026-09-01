@@ -165,7 +165,9 @@ export class SubtitlePipeline {
       ]
 
       // 4. 执行烧录
-      await this.ffmpegService.exec(args, { onProgress })
+      await this.ffmpegService.exec(args, {
+        onProgress: onProgress ? (p) => onProgress(p.progress) : undefined,
+      })
 
       // 5. 读取输出文件
       const data = await this.ffmpegService.readFile(outputFile)

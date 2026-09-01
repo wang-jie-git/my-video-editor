@@ -19,6 +19,8 @@ export interface CompressorOptions {
   release?: number
   /** 软拐点（dB），范围 0 到 24 */
   knee?: number
+  /** 预设名称（对齐 Equalizer/Reverb 的构造选项） */
+  preset?: keyof typeof COMPRESSOR_PRESETS
 }
 
 /**
@@ -163,6 +165,21 @@ export class Compressor {
       attack: options.attack ?? 0.003,
       release: options.release ?? 0.25,
       knee: options.knee ?? 30,
+      preset: options.preset ?? 'off',
+    }
+
+    // 应用预设（对齐 Equalizer/Reverb 的构造选项）
+    if (options.preset && COMPRESSOR_PRESETS[options.preset]) {
+      const presetOptions = COMPRESSOR_PRESETS[options.preset].options
+      this.options = {
+        ...this.options,
+        ...presetOptions,
+        threshold: presetOptions.threshold ?? this.options.threshold,
+        ratio: presetOptions.ratio ?? this.options.ratio,
+        attack: presetOptions.attack ?? this.options.attack,
+        release: presetOptions.release ?? this.options.release,
+        knee: presetOptions.knee ?? this.options.knee,
+      }
     }
 
     // 创建压缩器节点
@@ -256,11 +273,11 @@ export class Compressor {
       throw new Error(`未知的压缩器预设: ${presetName}`)
     }
 
-    this.setThreshold(preset.options.threshold)
-    this.setRatio(preset.options.ratio)
-    this.setAttack(preset.options.attack * 1000) // 转换回 ms
-    this.setRelease(preset.options.release * 1000) // 转换回 ms
-    this.setKnee(preset.options.knee)
+    this.setThreshold(preset.options.threshold ?? -24)
+    this.setRatio(preset.options.ratio ?? 12)
+    this.setAttack((preset.options.attack ?? 0.003) * 1000) // 转换回 ms
+    this.setRelease((preset.options.release ?? 0.25) * 1000) // 转换回 ms
+    this.setKnee(preset.options.knee ?? 30)
   }
 
   /**
@@ -356,7 +373,7 @@ export class Compressor {
 
     // 获取实际增益衰减值
     if (this.compressorNode.reduction) {
-      state.gainReduction = -this.compressorNode.reduction.value
+      state.gainReduction = -this.compressorNode.reduction
     }
 
     this.onStateChange(state)

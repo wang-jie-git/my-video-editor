@@ -47,14 +47,14 @@ export function SubtitleStyleEditor({ style, onChange }: SubtitleStyleEditorProp
   // 阴影属性变更
   const handleShadowChange = <K extends keyof NonNullable<SubtitleStyle['shadow']>>(
     key: K,
-    value: SubtitleStyle['shadow'][K]
+    value: NonNullable<SubtitleStyle['shadow']>[K]
   ) => {
     onChange({
       ...style,
       shadow: {
         ...style.shadow,
         [key]: value,
-      },
+      } as NonNullable<SubtitleStyle['shadow']>,
     })
   }
 

@@ -51,7 +51,7 @@ import type {
   VideoInfo,
   TimeSegment,
   VideoComposerProgress,
-} from "./types";
+} from "./video-composer/types";
 
 /**
  * VideoComposer 类
@@ -86,7 +86,7 @@ export class VideoComposer {
   async mergeVideos(
     inputFiles: string[],
     options: MergeOptions,
-    onProgress?: VideoComposerProgress,
+    onProgress?: (progress: VideoComposerProgress) => void,
   ): Promise<MergeResult> {
     const { outputFile, includeAudio = true, reencode = false } = options;
 
@@ -221,7 +221,7 @@ export class VideoComposer {
   async concatWithTransitions(
     inputFiles: string[],
     options: TransitionMergeOptions,
-    onProgress?: VideoComposerProgress,
+    onProgress?: (progress: VideoComposerProgress) => void,
   ): Promise<MergeResult> {
     const { outputFile, includeAudio = true, transitions } = options;
 
@@ -325,7 +325,7 @@ export class VideoComposer {
   async splitVideo(
     inputFile: string,
     options: SplitOptions,
-    onProgress?: VideoComposerProgress,
+    onProgress?: (progress: VideoComposerProgress) => void,
   ): Promise<SplitResult> {
     const {
       outputPrefix,
@@ -449,7 +449,7 @@ export class VideoComposer {
   async trimVideo(
     inputFile: string,
     options: TrimOptions,
-    onProgress?: VideoComposerProgress,
+    onProgress?: (progress: VideoComposerProgress) => void,
   ): Promise<TrimResult> {
     const {
       outputFile,

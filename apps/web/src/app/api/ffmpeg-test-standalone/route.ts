@@ -3,7 +3,7 @@
  * GET /api/ffmpeg-test-standalone?file=cdntest|standalone
  */
 
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 

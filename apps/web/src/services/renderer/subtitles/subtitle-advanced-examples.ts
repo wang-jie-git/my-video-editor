@@ -11,6 +11,7 @@
 import { SubtitlePipeline } from './subtitle-pipeline'
 import { SubtitleOcr, BrowserOcrEngine, WhisperOcrEngine } from './subtitle-ocr'
 import { SubtitleTranslator, BrowserTranslationEngine, MockTranslationEngine } from './subtitle-translator'
+import { FFmpegService } from '../ffmpeg/ffmpeg-service'
 import type { SubtitleTrack } from './subtitle-types'
 
 // ==================== 示例 1: OCR 字幕识别 ====================
@@ -94,6 +95,7 @@ async function example2a_mockTranslation() {
     name: 'Test',
     language: 'en',
     enabled: true,
+    style: {},
     subtitles: [
       { id: '1', startTime: 0, endTime: 2, text: 'Hello World', style: {} },
       { id: '2', startTime: 2, endTime: 4, text: 'How are you?', style: {} },
@@ -112,7 +114,7 @@ async function example2a_mockTranslation() {
   console.log('翻译统计:', result.stats)
   console.log('翻译结果:')
   result.subtitles.forEach(sub => {
-    const original = sub.style.originalText as string | undefined
+    const original = sub.style?.originalText as string | undefined
     console.log(`  ${original} → ${sub.text}`)
   })
 }
@@ -131,6 +133,7 @@ async function example2b_batchTranslation() {
       name: 'English',
       language: 'en',
       enabled: true,
+      style: {},
       subtitles: [
         { id: '1', startTime: 0, endTime: 2, text: 'Hello', style: {} },
       ],
@@ -140,6 +143,7 @@ async function example2b_batchTranslation() {
       name: 'Japanese',
       language: 'ja',
       enabled: true,
+      style: {},
       subtitles: [
         { id: '1', startTime: 0, endTime: 2, text: 'こんにちは', style: {} },
       ],
@@ -166,13 +170,14 @@ async function example2b_batchTranslation() {
 function example3a_batchTimeShift() {
   console.log('=== 示例 3a: 批量时间偏移 ===')
 
-  const pipeline = new SubtitlePipeline()
+  const pipeline = new SubtitlePipeline(new FFmpegService())
 
   const track: SubtitleTrack = {
     id: 'test',
     name: 'Test',
     language: 'en',
     enabled: true,
+    style: {},
     subtitles: [
       { id: '1', startTime: 0, endTime: 2, text: 'First', style: {} },
       { id: '2', startTime: 2, endTime: 4, text: 'Second', style: {} },
@@ -195,13 +200,14 @@ function example3a_batchTimeShift() {
 function example3b_batchTimeScale() {
   console.log('=== 示例 3b: 批量时间缩放 ===')
 
-  const pipeline = new SubtitlePipeline()
+  const pipeline = new SubtitlePipeline(new FFmpegService())
 
   const track: SubtitleTrack = {
     id: 'test',
     name: 'Test',
     language: 'en',
     enabled: true,
+    style: {},
     subtitles: [
       { id: '1', startTime: 0, endTime: 2, text: 'First', style: {} },
       { id: '2', startTime: 2, endTime: 4, text: 'Second', style: {} },
@@ -219,13 +225,14 @@ function example3b_batchTimeScale() {
 function example3c_batchTextReplace() {
   console.log('=== 示例 3c: 批量文本替换 ===')
 
-  const pipeline = new SubtitlePipeline()
+  const pipeline = new SubtitlePipeline(new FFmpegService())
 
   const track: SubtitleTrack = {
     id: 'test',
     name: 'Test',
     language: 'en',
     enabled: true,
+    style: {},
     subtitles: [
       { id: '1', startTime: 0, endTime: 2, text: 'Hello World', style: {} },
       { id: '2', startTime: 2, endTime: 4, text: 'Hello There', style: {} },
@@ -234,7 +241,13 @@ function example3c_batchTextReplace() {
   }
 
   // 批量替换 "Hello" → "Hi"
-  const replaced = pipeline.replaceText(track, 'Hello', 'Hi')
+  const replaced: SubtitleTrack = {
+    ...track,
+    subtitles: track.subtitles.map(sub => ({
+      ...sub,
+      text: sub.text.replace(/Hello/g, 'Hi'),
+    })),
+  }
   console.log('替换后:', replaced.subtitles.map(s => s.text))
 }
 
@@ -244,13 +257,14 @@ function example3c_batchTextReplace() {
 function example3d_mergeSubtitles() {
   console.log('=== 示例 3d: 合并字幕 ===')
 
-  const pipeline = new SubtitlePipeline()
+  const pipeline = new SubtitlePipeline(new FFmpegService())
 
   const track: SubtitleTrack = {
     id: 'test',
     name: 'Test',
     language: 'en',
     enabled: true,
+    style: {},
     subtitles: [
       { id: '1', startTime: 0, endTime: 2, text: 'Hello', style: {} },
       { id: '2', startTime: 2, endTime: 4, text: 'World', style: {} },
@@ -259,9 +273,9 @@ function example3d_mergeSubtitles() {
     ],
   }
 
-  // 合并间隔小于 0.5 秒的字幕
-  const merged = pipeline.mergeTracks([track], 0.5)
-  console.log('合并后:', merged[0].subtitles.map(s => s.text))
+  // 合并多个轨道
+  const merged = pipeline.mergeTracks([track])
+  console.log('合并后:', merged.subtitles.map(s => s.text))
 }
 
 // ==================== 示例 4: 验证字幕轨道 ====================
@@ -272,13 +286,14 @@ function example3d_mergeSubtitles() {
 function example4_validation() {
   console.log('=== 示例 4: 验证字幕 ===')
 
-  const pipeline = new SubtitlePipeline()
+  const pipeline = new SubtitlePipeline(new FFmpegService())
 
   const track: SubtitleTrack = {
     id: 'test',
     name: 'Test',
     language: 'en',
     enabled: true,
+    style: {},
     subtitles: [
       { id: '1', startTime: 0, endTime: 2, text: 'Valid', style: {} },
       { id: '2', startTime: 1, endTime: 3, text: 'Overlapping', style: {} }, // 重叠
@@ -291,7 +306,6 @@ function example4_validation() {
   console.log('验证结果:')
   console.log('  有效:', validation.valid)
   console.log('  错误:', validation.errors)
-  console.log('  警告:', validation.warnings)
 }
 
 // ==================== 示例 5: 完整工作流 ====================
@@ -302,7 +316,7 @@ function example4_validation() {
 async function example5_completeWorkflow() {
   console.log('=== 示例 5: 完整工作流 ===')
 
-  const pipeline = new SubtitlePipeline()
+  const pipeline = new SubtitlePipeline(new FFmpegService())
   const translator = new SubtitleTranslator()
 
   // 1. 导入 SRT 字幕
@@ -329,11 +343,14 @@ How are you?
   console.log('2. 时间偏移完成')
 
   // 3. 批量样式应用
-  const styled = pipeline.applyStyle(shifted, {
-    fontSize: 28,
-    color: '#FFFFFF',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-  })
+  const styled: SubtitleTrack = {
+    ...shifted,
+    style: {
+      fontSize: 28,
+      color: '#FFFFFF',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+    },
+  }
   console.log('3. 样式应用完成')
 
   // 4. 翻译字幕
@@ -346,13 +363,14 @@ How are you?
   console.log('4. 翻译完成:', translated.stats)
 
   // 5. 导出为 VTT
-  const exportResult = pipeline.exportVtt(translated.track || track)
+  const translatedTrack: SubtitleTrack = { ...track, subtitles: translated.subtitles }
+  const exportResult = pipeline.exportVtt(translatedTrack)
   if (exportResult.success) {
     console.log('5. 导出成功:', exportResult.content?.substring(0, 100), '...')
   }
 
   // 6. 验证最终轨道
-  const validation = pipeline.validateTrack(translated.track || track)
+  const validation = pipeline.validateTrack(translatedTrack)
   console.log('6. 验证结果:', validation.valid ? '通过' : '失败', validation.errors)
 }
 

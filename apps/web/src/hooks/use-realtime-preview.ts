@@ -5,9 +5,9 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FilterPipeline } from '../filter-pipeline'
-import { FFmpegService } from '../ffmpeg/ffmpeg-service'
-import type { FilterChain } from '../filter-types'
+import { FilterPipeline } from '@/services/renderer/filters/filter-pipeline'
+import { FFmpegService } from '@/services/renderer/ffmpeg/ffmpeg-service'
+import type { FilterChain } from '@/services/renderer/filters/filter-types'
 
 interface UseRealtimePreviewOptions {
   /** 原始视频文件路径 */

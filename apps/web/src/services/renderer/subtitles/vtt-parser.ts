@@ -191,7 +191,7 @@ export class VttParser {
   /**
    * 转义 HTML
    */
-  private static escapeHtml(text: string): string {
+  static escapeHtml(text: string): string {
     return text
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -201,7 +201,7 @@ export class VttParser {
   /**
    * 移除 HTML 标签
    */
-  private static stripTags(text: string): string {
+  static stripTags(text: string): string {
     return text.replace(/<[^>]+>/g, '')
   }
 

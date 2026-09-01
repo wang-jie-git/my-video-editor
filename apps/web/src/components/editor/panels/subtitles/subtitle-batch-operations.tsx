@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useCallback } from 'react'
-import type { SubtitleTrack } from '../services/renderer/subtitles'
+import type { SubtitleTrack } from '@/services/renderer/subtitles'
 
 export interface SubtitleBatchOperationsProps {
   /** 当前轨道列表 */

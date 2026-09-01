@@ -4,7 +4,7 @@
  * 提供视频裁剪的 UI 界面
  */
 
-import { useTranslations } from "next-intl";
+import { useTranslation } from '@i18next-toolkit/nextjs-approuter';
 import { useState, useCallback, useEffect } from "react";
 import type { VideoListEntry } from "./types";
 
@@ -29,7 +29,7 @@ export function VideoTrimPanel({
   videos: externalVideos,
   onSelectVideo,
 }: VideoTrimPanelProps) {
-  const t = useTranslations("videoComposer");
+  const { t } = useTranslation();
 
   // 状态
   const [videos] = useState<VideoListEntry[]>(externalVideos || []);
@@ -163,16 +163,16 @@ export function VideoTrimPanel({
   return (
     <div className="video-trim-panel">
       <div className="panel-header">
-        <h3>{t("trimTitle") || "视频裁剪"}</h3>
+        <h3>{t('videoComposer.trimTitle') || "视频裁剪"}</h3>
         <p className="panel-description">
-          {t("trimDescription") || "裁剪视频的开始或结束部分"}
+          {t('videoComposer.trimDescription') || "裁剪视频的开始或结束部分"}
         </p>
       </div>
 
       <div className="panel-content">
         {/* 视频选择 */}
         <div className="form-group">
-          <label htmlFor="video-select">{t("selectVideo") || "选择视频"}</label>
+          <label htmlFor="video-select">{t('videoComposer.selectVideo') || "选择视频"}</label>
           <select
             id="video-select"
             value={selectedVideoId || ""}
@@ -181,7 +181,7 @@ export function VideoTrimPanel({
             disabled={isProcessing}
           >
             <option value="">
-              {t("selectVideoPlaceholder") || "请选择视频..."}
+              {t('videoComposer.selectVideoPlaceholder') || "请选择视频..."}
             </option>
             {videos.map((video) => (
               <option key={video.id} value={video.id}>
@@ -195,11 +195,11 @@ export function VideoTrimPanel({
         {selectedVideo && (
           <>
             <div className="form-group">
-              <label>{t("trimRange") || "裁剪范围"}</label>
+              <label>{t('videoComposer.trimRange') || "裁剪范围"}</label>
               <div className="time-range">
                 <div className="time-input-group">
                   <label htmlFor="start-time">
-                    {t("startTime") || "开始时间"}
+                    {t('videoComposer.startTime') || "开始时间"}
                   </label>
                   <div className="time-input-wrapper">
                     <input
@@ -220,7 +220,7 @@ export function VideoTrimPanel({
                 <div className="time-separator">→</div>
 
                 <div className="time-input-group">
-                  <label htmlFor="end-time">{t("endTime") || "结束时间"}</label>
+                  <label htmlFor="end-time">{t('videoComposer.endTime') || "结束时间"}</label>
                   <div className="time-input-wrapper">
                     <input
                       id="end-time"
@@ -238,36 +238,36 @@ export function VideoTrimPanel({
                 </div>
               </div>
               <div className="time-preview">
-                {t("videoDuration") || "视频总时长"}:{" "}
+                {t('videoComposer.videoDuration') || "视频总时长"}:{" "}
                 {formatTime(selectedVideo.duration)} |
-                {t("trimmedDuration") || "裁剪时长"}: {formatTime(trimDuration)}
+                {t('videoComposer.trimmedDuration') || "裁剪时长"}: {formatTime(trimDuration)}
               </div>
             </div>
 
             {/* 快速裁剪预设 */}
             <div className="form-group">
-              <label>{t("quickTrim") || "快速裁剪"}</label>
+              <label>{t('videoComposer.quickTrim') || "快速裁剪"}</label>
               <div className="quick-trim-buttons">
                 <button
                   onClick={() => handleQuickTrim("start")}
                   disabled={isProcessing}
                   className="btn-quick"
                 >
-                  {t("trimStart") || "裁剪开头"}
+                  {t('videoComposer.trimStart') || "裁剪开头"}
                 </button>
                 <button
                   onClick={() => handleQuickTrim("end")}
                   disabled={isProcessing}
                   className="btn-quick"
                 >
-                  {t("trimEnd") || "裁剪结尾"}
+                  {t('videoComposer.trimEnd') || "裁剪结尾"}
                 </button>
                 <button
                   onClick={() => handleQuickTrim("middle")}
                   disabled={isProcessing}
                   className="btn-quick"
                 >
-                  {t("trimMiddle") || "裁剪中间"}
+                  {t('videoComposer.trimMiddle') || "裁剪中间"}
                 </button>
               </div>
             </div>
@@ -275,7 +275,7 @@ export function VideoTrimPanel({
             {/* 输出设置 */}
             <div className="form-group">
               <label htmlFor="output-file">
-                {t("outputFile") || "输出文件名"}
+                {t('videoComposer.outputFile') || "输出文件名"}
               </label>
               <input
                 id="output-file"
@@ -289,7 +289,7 @@ export function VideoTrimPanel({
 
             <div className="form-group">
               <label htmlFor="output-format">
-                {t("outputFormat") || "输出格式"}
+                {t('videoComposer.outputFormat') || "输出格式"}
               </label>
               <select
                 id="output-format"
@@ -313,7 +313,7 @@ export function VideoTrimPanel({
                   onChange={(e) => setReencode(e.target.checked)}
                   disabled={isProcessing}
                 />
-                <span>{t("reencode") || "重新编码（更精确但更慢）"}</span>
+                <span>{t('videoComposer.reencode') || "重新编码（更精确但更慢）"}</span>
               </label>
             </div>
           </>
@@ -322,7 +322,7 @@ export function VideoTrimPanel({
         {/* 进度显示 */}
         {progress.phase !== "idle" && (
           <div className="form-group">
-            <label>{t("progress") || "进度"}</label>
+            <label>{t('videoComposer.progress') || "进度"}</label>
             <div className="progress-bar">
               <div
                 className="progress-fill"
@@ -331,10 +331,10 @@ export function VideoTrimPanel({
             </div>
             <span className="progress-text">
               {progress.phase === "complete"
-                ? t("complete") || "完成"
+                ? t('videoComposer.complete') || "完成"
                 : progress.phase === "error"
-                  ? t("error") || "错误"
-                  : t("processing") || "处理中..."}
+                  ? t('videoComposer.error') || "错误"
+                  : t('videoComposer.processing') || "处理中..."}
             </span>
           </div>
         )}
@@ -347,8 +347,8 @@ export function VideoTrimPanel({
             className="btn-primary"
           >
             {isProcessing
-              ? t("trimming") || "裁剪中..."
-              : t("trim") || "裁剪视频"}
+              ? t('videoComposer.trimming') || "裁剪中..."
+              : t('videoComposer.trim') || "裁剪视频"}
           </button>
         </div>
       </div>

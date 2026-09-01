@@ -4,7 +4,7 @@
  * 整合视频合并、分割、裁剪等功能的统一界面
  */
 
-import { useTranslations } from "next-intl";
+import { useTranslation } from '@i18next-toolkit/nextjs-approuter';
 import { useState } from "react";
 import { VideoMergePanel } from "./video-merge-panel";
 import { VideoSplitPanel } from "./video-split-panel";
@@ -13,7 +13,7 @@ import type {
   MergeResult,
   SplitResult,
   TrimResult,
-} from "../../../services/renderer/video-composer/types";
+} from "@/services/renderer/video-composer/types";
 
 export type VideoComposerMode = "merge" | "split" | "trim";
 
@@ -39,7 +39,7 @@ export function VideoComposerPanel({
   onTrimComplete,
   onOperationComplete,
 }: VideoComposerPanelProps) {
-  const t = useTranslations("videoComposer");
+  const { t } = useTranslation();
 
   // 当前模式
   const [mode, setMode] = useState<VideoComposerMode>("merge");
@@ -92,9 +92,9 @@ export function VideoComposerPanel({
   return (
     <div className="video-composer-panel">
       <div className="panel-header">
-        <h3>{t("title") || "视频编辑"}</h3>
+        <h3>{t('videoComposer.title') || "视频编辑"}</h3>
         <p className="panel-description">
-          {t("description") || "合并、分割、裁剪视频"}
+          {t('videoComposer.description') || "合并、分割、裁剪视频"}
         </p>
       </div>
 
@@ -104,19 +104,19 @@ export function VideoComposerPanel({
           className={`mode-tab ${mode === "merge" ? "active" : ""}`}
           onClick={() => setMode("merge")}
         >
-          {t("merge") || "合并"}
+          {t('videoComposer.merge') || "合并"}
         </button>
         <button
           className={`mode-tab ${mode === "split" ? "active" : ""}`}
           onClick={() => setMode("split")}
         >
-          {t("split") || "分割"}
+          {t('videoComposer.split') || "分割"}
         </button>
         <button
           className={`mode-tab ${mode === "trim" ? "active" : ""}`}
           onClick={() => setMode("trim")}
         >
-          {t("trim") || "裁剪"}
+          {t('videoComposer.trim') || "裁剪"}
         </button>
       </div>
 

@@ -4,7 +4,7 @@
  * 检测文件格式并显示检测结果
  */
 
-import { useTranslations } from 'next-intl'
+import { useTranslation } from '@i18next-toolkit/nextjs-approuter'
 import { useState } from 'react'
 
 interface FormatDetectorProps {
@@ -18,7 +18,7 @@ interface FormatDetectorProps {
  * FormatDetector 组件
  */
 export function FormatDetector({ fileName, onDetect }: FormatDetectorProps) {
-  const t = useTranslations('formatConverter')
+  const { t } = useTranslation()
 
   // 提取扩展名
   const getExtension = (name: string): string => {
@@ -47,32 +47,32 @@ export function FormatDetector({ fileName, onDetect }: FormatDetectorProps) {
   return (
     <div className="format-detector">
       <div className="format-info">
-        <span className="format-label">{t('format')}:</span>
+        <span className="format-label">{t('formatConverter.format')}:</span>
         <span className={`format-value ${isVideo ? 'video' : 'non-video'}`}>
-          {ext.toUpperCase() || t('unknown')}
+          {ext.toUpperCase() || t('formatConverter.unknown')}
         </span>
       </div>
 
       <div className="format-status">
         {isVideo ? (
           <span className="status-badge video">
-            {t('videoFormat')}
+            {t('formatConverter.videoFormat')}
           </span>
         ) : (
           <span className="status-badge non-video">
-            {t('nonVideoFormat')}
+            {t('formatConverter.nonVideoFormat')}
           </span>
         )}
 
         {isVideo && supported && (
           <span className="status-badge supported">
-            {t('conversionSupported')}
+            {t('formatConverter.conversionSupported')}
           </span>
         )}
 
         {isVideo && !supported && (
           <span className="status-badge unsupported">
-            {t('conversionNotSupported')}
+            {t('formatConverter.conversionNotSupported')}
           </span>
         )}
       </div>

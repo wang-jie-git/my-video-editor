@@ -30,9 +30,11 @@ export default function FFmpegBrowserTestPage() {
     try {
       // 动态导入 FFmpeg
       addLog('导入 @ffmpeg/ffmpeg...')
+      // @ts-ignore - 远程 URL 动态导入（运行时从 CDN 加载）
       const ffmpegModule = await import('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js')
 
       addLog('导入 @ffmpeg/util...')
+      // @ts-ignore - 远程 URL 动态导入（运行时从 CDN 加载）
       const utilModule = await import('https://unpkg.com/@ffmpeg/util@0.12.10/dist/esm/index.js')
 
       const { FFmpeg } = ffmpegModule

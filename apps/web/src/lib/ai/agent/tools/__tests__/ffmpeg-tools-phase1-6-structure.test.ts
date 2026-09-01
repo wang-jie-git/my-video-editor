@@ -290,7 +290,7 @@ describe("Phase 1-6 FFmpeg 工具（结构验证）", () => {
 	describe("参数验证", () => {
 		test("文件路径参数应该是字符串类型", () => {
 			for (const tool of tools) {
-				const props = tool.parameters.properties;
+				const props = tool.parameters.properties as Record<string, { type?: string }>;
 				for (const key of Object.keys(props)) {
 					if (key.includes("File") || key.includes("Path")) {
 						expect(props[key].type).toBe("string");

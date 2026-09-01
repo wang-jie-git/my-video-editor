@@ -91,16 +91,18 @@ export function SubtitlePanelExample3() {
           1,
           4,
           {
-            fontSize: 32,
-            color: '#FFD700',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            shadow: {
-              color: '#000000',
-              blur: 6,
-              x: 2,
-              y: 2,
+            style: {
+              fontSize: 32,
+              color: '#FFD700',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              shadow: {
+                color: '#000000',
+                blur: 6,
+                x: 2,
+                y: 2,
+              },
+              bold: true,
             },
-            bold: true,
           }
         ),
       ],

@@ -5,7 +5,7 @@
  */
 
 import { SubtitlePipeline } from './subtitle-pipeline'
-import { FFmpegService } from './ffmpeg/ffmpeg-service'
+import { FFmpegService } from '@/services/renderer/ffmpeg/ffmpeg-service'
 import type { SubtitleTrack, SubtitleStyle } from './subtitle-types'
 
 // ==================== 示例 1: 解析 SRT 字幕 ====================

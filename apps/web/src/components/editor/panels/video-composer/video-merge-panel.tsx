@@ -4,7 +4,7 @@
  * 提供视频合并的 UI 界面
  */
 
-import { useTranslations } from "next-intl";
+import { useTranslation } from '@i18next-toolkit/nextjs-approuter';
 import { useState, useCallback } from "react";
 import { TransitionSelector } from "./transition-selector";
 import type { VideoListEntry } from "./types";
@@ -33,7 +33,7 @@ export function VideoMergePanel({
   onAddVideo,
   onRemoveVideo,
 }: VideoMergePanelProps) {
-  const t = useTranslations("videoComposer");
+  const { t } = useTranslation();
 
   // 状态
   const [videos, setVideos] = useState<VideoListEntry[]>(externalVideos || []);
@@ -137,9 +137,9 @@ export function VideoMergePanel({
   return (
     <div className="video-merge-panel">
       <div className="panel-header">
-        <h3>{t("mergeTitle") || "视频合并"}</h3>
+        <h3>{t('videoComposer.mergeTitle') || "视频合并"}</h3>
         <p className="panel-description">
-          {t("mergeDescription") || "将多个视频合并为一个"}
+          {t('videoComposer.mergeDescription') || "将多个视频合并为一个"}
         </p>
       </div>
 
@@ -147,11 +147,11 @@ export function VideoMergePanel({
         {/* 视频列表 */}
         <div className="form-group">
           <label>
-            {t("videoList") || "视频列表"} ({videos.length})
+            {t('videoComposer.videoList') || "视频列表"} ({videos.length})
           </label>
           <div className="video-list">
             {videos.length === 0 ? (
-              <div className="empty-list">{t("noVideos") || "暂无视频"}</div>
+              <div className="empty-list">{t('videoComposer.noVideos') || "暂无视频"}</div>
             ) : (
               videos.map((video, index) => (
                 <div key={video.id} className="video-item">
@@ -165,7 +165,7 @@ export function VideoMergePanel({
                     onClick={() => handleRemoveVideo(video.id)}
                     className="btn-remove"
                     disabled={isProcessing}
-                    aria-label={t("removeVideo") || "移除视频"}
+                    aria-label={t('videoComposer.removeVideo') || "移除视频"}
                   >
                     ×
                   </button>
@@ -192,7 +192,7 @@ export function VideoMergePanel({
               onChange={(e) => setUseTransitions(e.target.checked)}
               disabled={isProcessing}
             />
-            <span>{t("useTransitions") || "添加转场效果"}</span>
+            <span>{t('videoComposer.useTransitions') || "添加转场效果"}</span>
           </label>
 
           {useTransitions && (
@@ -212,7 +212,7 @@ export function VideoMergePanel({
         {/* 输出格式 */}
         <div className="form-group">
           <label htmlFor="output-format">
-            {t("outputFormat") || "输出格式"}
+            {t('videoComposer.outputFormat') || "输出格式"}
           </label>
           <select
             id="output-format"
@@ -235,7 +235,7 @@ export function VideoMergePanel({
               onChange={(e) => setIncludeAudio(e.target.checked)}
               disabled={isProcessing}
             />
-            <span>{t("includeAudio") || "包含音频"}</span>
+            <span>{t('videoComposer.includeAudio') || "包含音频"}</span>
           </label>
         </div>
 
@@ -248,17 +248,17 @@ export function VideoMergePanel({
               onChange={(e) => setReencode(e.target.checked)}
               disabled={isProcessing}
             />
-            <span>{t("reencode") || "重新编码（支持转场效果）"}</span>
+            <span>{t('videoComposer.reencode') || "重新编码（支持转场效果）"}</span>
           </label>
           <p className="help-text">
-            {t("reencodeHelp") || "重新编码会降低速度但支持转场效果"}
+            {t('videoComposer.reencodeHelp') || "重新编码会降低速度但支持转场效果"}
           </p>
         </div>
 
         {/* 进度显示 */}
         {progress.phase !== "idle" && (
           <div className="form-group">
-            <label>{t("progress") || "进度"}</label>
+            <label>{t('videoComposer.progress') || "进度"}</label>
             <div className="progress-bar">
               <div
                 className="progress-fill"
@@ -267,10 +267,10 @@ export function VideoMergePanel({
             </div>
             <span className="progress-text">
               {progress.phase === "complete"
-                ? t("complete") || "完成"
+                ? t('videoComposer.complete') || "完成"
                 : progress.phase === "error"
-                  ? t("error") || "错误"
-                  : t("processing") || "处理中..."}
+                  ? t('videoComposer.error') || "错误"
+                  : t('videoComposer.processing') || "处理中..."}
             </span>
           </div>
         )}
@@ -283,8 +283,8 @@ export function VideoMergePanel({
             className="btn-primary"
           >
             {isProcessing
-              ? t("merging") || "合并中..."
-              : t("merge") || "合并视频"}
+              ? t('videoComposer.merging') || "合并中..."
+              : t('videoComposer.merge') || "合并视频"}
           </button>
 
           <button
@@ -292,7 +292,7 @@ export function VideoMergePanel({
             disabled={isProcessing || videos.length === 0}
             className="btn-secondary"
           >
-            {t("reset") || "重置"}
+            {t('videoComposer.reset') || "重置"}
           </button>
         </div>
       </div>

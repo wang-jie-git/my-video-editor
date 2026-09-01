@@ -4,14 +4,9 @@
  * 提供直观的视频编辑操作界面
  */
 
-import type {
-  VideoListItem,
-  VideoMergeUIConfig,
-  VideoSplitUIConfig,
-  VideoTrimUIConfig,
-  Transition,
-  TransitionType,
-} from "../../../services/renderer/video-composer/types";
+import type { TransitionType } from "@/services/renderer/video-composer/types";
+
+export type { Transition, TransitionType } from "@/services/renderer/video-composer/types";
 
 // ============ 视频列表 ============
 
