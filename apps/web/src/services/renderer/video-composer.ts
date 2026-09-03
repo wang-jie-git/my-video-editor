@@ -840,6 +840,12 @@ export class VideoComposer {
    */
   async getVideoInfo(inputFile: string): Promise<VideoInfo | null> {
     try {
+      // FFmpeg 未加载（浏览器构建 Turbopack 下无法加载 wasm）→ 返回 null，不抛错
+      if (!this.ffmpegService.isLoaded()) {
+        console.warn("[VideoComposer] FFmpeg 未加载，跳过 getVideoInfo（请改用 video_probe）")
+        return null
+      }
+
       // 使用 FFprobe 获取视频信息
       const args = [
         "-v",

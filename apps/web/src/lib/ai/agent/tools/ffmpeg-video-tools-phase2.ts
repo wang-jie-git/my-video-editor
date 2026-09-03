@@ -263,6 +263,17 @@ Returns:
 				};
 			}
 
+			// FFmpeg.wasm 在浏览器构建（Turbopack）下无法加载；
+			// 此时优雅降级：引导改用浏览器原生的 video_probe 工具（读 MediaAsset 元数据）
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService || !ffmpegService.isLoaded()) {
+				return {
+					success: false,
+					message:
+						"FFmpeg is not loaded in this build (FFmpeg.wasm unavailable under Turbopack). To get video info without FFmpeg, use the `video_probe` tool with a media assetId (first call `list_media_assets` to find asset IDs), or enable FFmpeg export if available.",
+				};
+			}
+
 			const info = await renderer.getVideoInfo(filePath);
 
 			if (!info) {
@@ -346,6 +357,16 @@ This is faster than get_video_info as it only retrieves duration.`,
 					success: false,
 					message:
 						"FFmpeg export is not enabled. Please enable FFmpeg export first.",
+				};
+			}
+
+			// FFmpeg.wasm 在浏览器构建下不可用 → 优雅降级，引导使用 video_probe
+			const ffmpegService = (renderer as any).ffmpegService;
+			if (!ffmpegService || !ffmpegService.isLoaded()) {
+				return {
+					success: false,
+					message:
+						"FFmpeg is not loaded in this build. Use `video_probe` with a media assetId (after `list_media_assets`) to get duration without FFmpeg.",
 				};
 			}
 
@@ -467,6 +488,13 @@ The thumbnail is captured at the specified timestamp and saved as a PNG image.`,
 				return {
 					success: false,
 					message: "FFmpegService is not initialized.",
+				};
+			}
+			if (!ffmpegService.isLoaded()) {
+				return {
+					success: false,
+					message:
+						"FFmpeg is not loaded in this build. Thumbnails via FFmpeg are unavailable; use `inspect_frame` (browser-native) or `video_analyze` to capture visual frames instead.",
 				};
 			}
 

@@ -14,10 +14,88 @@ import { mediaTools } from "./media-tools";
 import { projectTools } from "./project-tools";
 import { timelineTools } from "./timeline-tools";
 import { ttsTools } from "./tts-tools";
+import { videoAnalysisTools } from "./video-analysis-tools";
 import { type AgentTool, buildToolSchema } from "./types";
+
+/**
+ * 列出当前注册的全部工具（运行时动态读取，始终准确）
+ *
+ * 当用户问"你有哪些工具/列出工具列表/你能做什么"时，AI 应调用本工具
+ * 获取完整的工具清单，而不是依赖 system prompt 里的静态描述。
+ */
+const listToolsTool: AgentTool = {
+	name: "list_tools",
+	description:
+		"列出当前可用的全部工具及其用途（动态读取工具注册表，包含本地工具、Skills 技能、MCP 工具）。当用户询问你有哪些工具、列出工具列表、或想了解你能做什么时，调用本工具获取完整清单。",
+	parameters: {
+		type: "object",
+		properties: {},
+	},
+	execute: async () => {
+		const tools = getAllTools();
+		const grouped = tools.reduce<Record<string, AgentTool[]>>((acc, tool) => {
+			// 按前缀分组的辅助函数
+			const group =
+				tool.name.startsWith("ffmpeg") || tool.name.startsWith("apply_") ||
+				tool.name.startsWith("convert_") || tool.name.startsWith("merge_") ||
+				tool.name.startsWith("split_") || tool.name.startsWith("trim_") ||
+				tool.name.startsWith("parse_") || tool.name.startsWith("burn_") ||
+				tool.name.startsWith("add_subtitle") || tool.name.startsWith("translate_sub") ||
+				tool.name.startsWith("execute_ffmpeg") || tool.name.startsWith("get_ffmpeg") ||
+				tool.name.startsWith("check_file") || tool.name.startsWith("export_") ||
+				tool.name.startsWith("get_video") || tool.name.startsWith("generate_thumb") ||
+				tool.name.startsWith("normalize") || tool.name.startsWith("batch_convert") ||
+				tool.name.startsWith("adjust_video") || tool.name.startsWith("reverse_") ||
+				tool.name.startsWith("concat_")
+					? "FFmpeg Video Processing"
+					: tool.name.startsWith("generate_") || tool.name.startsWith("list_char") ||
+						  tool.name.startsWith("get_character") ||
+						  tool.name.startsWith("update_character") ||
+						  tool.name.startsWith("analyze_character")
+						? "AI Generation & Characters"
+						: tool.name.startsWith("list_media") || tool.name.startsWith("add_") ||
+							  tool.name.startsWith("update_element") ||
+							  tool.name.startsWith("delete_element") ||
+							  tool.name.startsWith("move_element") ||
+							  tool.name.startsWith("get_timeline") ||
+							  tool.name.startsWith("get_project") ||
+							  tool.name.startsWith("update_project") ||
+							  tool.name.startsWith("generate_captions") ||
+							  tool.name.startsWith("inspect_frame") ||
+							  tool.name.startsWith("generate_speech") ||
+							  tool.name.startsWith("list_tools")
+							? "Editing & Media"
+							: tool.name.startsWith("skill")
+								? "Workflow Skills"
+								: tool.name.startsWith("switch_expert")
+									? "Expert Roles"
+									: "MCP Tools";
+			(acc[group] ??= []).push(tool);
+			return acc;
+		}, {});
+
+		const data: Record<string, unknown> = {
+			total: tools.length,
+			tools: tools.map((t) => ({
+				name: t.name,
+				description: t.description,
+			})),
+			groups: Object.entries(grouped).map(([group, list]) => ({
+				group,
+				tools: list.map((t) => t.name),
+			})),
+		};
+		return {
+			success: true,
+			message: `共 ${tools.length} 个工具`,
+			data,
+		};
+	},
+};
 
 // 本地工具（静态）
 const LOCAL_TOOLS: AgentTool[] = [
+	listToolsTool,
 	...projectTools,
 	...frameTools,
 	...mediaTools,
@@ -40,10 +118,17 @@ const LOCAL_TOOLS: AgentTool[] = [
 	...ffmpegAudioTools,
 	// Phase 7: 视频合并/分割工具
 	...ffmpegVideoTools,
+	// Phase 8: 视频理解工具（video_probe / video_analyze / video_ask + set_asr_config）
+	...videoAnalysisTools,
 ];
+
 
 // MCP 工具（动态加载，仅在 Node.js 环境）
 let mcpTools: AgentTool[] = [];
+let mcpInitialized = false;
+
+// 动态工具（运行时按会话状态注册，如 Director 模式的 switch_expert_role）
+let dynamicTools: AgentTool[] = [];
 
 // Skill 工具（动态加载）
 let skillTools: AgentTool[] = [];
@@ -68,10 +153,17 @@ export function setSkillTools(tools: AgentTool[]): void {
 }
 
 /**
- * 获取所有工具（本地 + MCP + Skills）
+ * 设置动态工具列表（由 service.ts 在每次会话运行时注册，如 Director 模式的 switch_expert_role）
+ */
+export function setDynamicTools(tools: AgentTool[]): void {
+	dynamicTools = tools;
+}
+
+/**
+ * 获取所有工具（本地 + 动态 + MCP + Skills）
  */
 export function getAllTools(): AgentTool[] {
-	return [...LOCAL_TOOLS, ...skillTools, ...mcpTools];
+	return [...LOCAL_TOOLS, ...dynamicTools, ...skillTools, ...mcpTools];
 }
 
 /**
@@ -142,6 +234,7 @@ export async function initMcpTools(): Promise<void> {
 		}
 		const { initMcpTools: init } = await import("../mcp/mcp-tools");
 		await init();
+		mcpInitialized = true;
 	} catch (error) {
 		console.error("[Tools] Failed to initialize MCP:", error);
 	}
@@ -189,12 +282,7 @@ export function isSkillsReady(): boolean {
  * 检查 MCP 是否就绪
  */
 export function isMcpReady(): boolean {
-	try {
-		const { isMcpReady: check } = require("../mcp/mcp-tools");
-		return check();
-	} catch {
-		return false;
-	}
+	return mcpInitialized;
 }
 
 /**
