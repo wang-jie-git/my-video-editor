@@ -61,6 +61,17 @@ const DEFAULT_SERVERS: McpServerConfig[] = [
     icon: "🧠",
     category: "memory",
   },
+  {
+    id: "wigolo",
+    name: "Wigolo",
+    description: "Wigolo 本地优先网页搜索/抓取（免费 keyless）",
+    enabled: true,
+    serverPath: "/Users/mac/.npm-global/bin/wigolo",
+    serverArgs: [],
+    timeout: 60000,
+    icon: "🔎",
+    category: "search",
+  },
 ];
 
 /**
@@ -244,7 +255,7 @@ export const useMcpStore = create<McpState>()(
     }),
     {
       name: "mcp-config",
-      version: 2,
+      version: 3,
       partialize: (state) => ({
         config: state.config,
       }),
@@ -252,6 +263,20 @@ export const useMcpStore = create<McpState>()(
         // v1 → v2：默认启用 One Memory server（旧配置 enabled: false 会覆盖新默认）
         if (version < 2) {
           return { config: DEFAULT_CONFIG };
+        }
+        // v2 → v3：追加 Wigolo server（保留用户已有 servers）
+        const prev = persistedState as McpPersistedState;
+        if (version < 3) {
+          const hasWigolo = prev.config.servers.some((s) => s.id === "wigolo");
+          if (hasWigolo) {
+            return prev;
+          }
+          return {
+            config: {
+              ...prev.config,
+              servers: [...prev.config.servers, DEFAULT_SERVERS[1]],
+            },
+          };
         }
         return persistedState as McpPersistedState;
       },

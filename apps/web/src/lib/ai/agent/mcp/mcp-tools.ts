@@ -54,21 +54,16 @@ export async function initMcpTools(): Promise<void> {
     console.log("[MCP] Waiting for connections to complete...");
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // 获取所有工具
-    const allTools = manager.getAllTools();
+    // 获取所有工具（含所属 Server ID，精确路由，无前缀歧义）
+    const allTools = manager.getAllToolsWithServer();
     console.log(`[MCP] Found ${allTools.length} tools from manager`);
 
-    mcpTools = allTools.map((tool) => ({
+    mcpTools = allTools.map(({ tool, serverId }) => ({
       name: tool.name,
       description: tool.description,
       parameters: tool.inputSchema,
       execute: async (args: Record<string, unknown>): Promise<AgentToolResult> => {
-        // 从工具名解析 serverId 和 actualToolName
-        const [prefix, ...rest] = tool.name.split("_");
-        const serverId = rest.length > 0 ? prefix : "default";
-        const actualToolName = rest.length > 0 ? rest.join("_") : tool.name;
-
-        const result = await manager.callTool(serverId, actualToolName, args);
+        const result = await manager.callTool(serverId, tool.name, args);
         return {
           success: result.success,
           message: result.message,

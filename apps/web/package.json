@@ -17,7 +17,7 @@
     "translation:extract": "i18next-toolkit extract",
     "translation:scan": "i18next-toolkit scan",
     "translation:translate": "i18next-toolkit translate",
-    "test": "bun test"
+    "test": "bash scripts/run-tests.sh"
   },
   "dependencies": {
     "@cutia/env": "workspace:*",

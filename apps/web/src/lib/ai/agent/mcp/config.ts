@@ -32,6 +32,19 @@ export const DEFAULT_MCP_SERVERS: McpServerConfig[] = [
     icon: "🧠",
     category: "memory",
   },
+  {
+    id: "wigolo",
+    name: "Wigolo",
+    description: "Wigolo 本地优先网页搜索/抓取（免费 keyless，search/fetch/crawl/research 等）",
+    enabled: true,
+    serverPath:
+      process.env.NEXT_PUBLIC_WIGOLO_MCP_PATH ||
+      "/Users/mac/.npm-global/bin/wigolo",
+    serverArgs: [],
+    timeout: 60000,
+    icon: "🔎",
+    category: "search",
+  },
 ];
 
 /**
