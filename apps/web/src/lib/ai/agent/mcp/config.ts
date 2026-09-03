@@ -14,15 +14,19 @@ export const DEFAULT_MCP_SERVERS: McpServerConfig[] = [
   {
     id: "one-memory",
     name: "One Memory",
-    description: "One Memory 记忆系统（19 个工具）",
-    enabled: false,
+    description: "One Memory 记忆系统（38 个工具）",
+    enabled: true,
     serverPath:
       process.env.NEXT_PUBLIC_MCP_SERVER_PATH ||
       "/Users/mac/Desktop/AI-memory/packages/memory-mcp/build/index.js",
     serverArgs: [
-      // 查找 .codegraph 目录（从项目根目录向上查找）
+      // 显式指定 codegraph 目录（空格分隔格式，parseArgs 不接受 = 格式）
+      "--codegraph-dir",
+      process.env.NEXT_PUBLIC_CODEGRAPH_DIR ||
+        "/Users/mac/Desktop/AI-memory/.codegraph",
+      // 使用轻量 embedder（零模型下载）
       "--embedder",
-      "simple", // 默认使用轻量 embedder（零模型下载）
+      "simple",
     ].filter(Boolean),
     timeout: 30000,
     icon: "🧠",

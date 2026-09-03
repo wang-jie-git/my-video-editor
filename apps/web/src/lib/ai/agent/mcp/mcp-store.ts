@@ -12,8 +12,6 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { generateUUID } from "@/utils/id";
 import type { McpServerConfig, McpServerStatus, McpConfig } from "./types";
-import { getMcpManager, setMcpManager } from "./mcp-manager";
-import { McpClient } from "./mcp-client";
 
 interface McpPersistedState {
   config: McpConfig;
@@ -50,10 +48,15 @@ const DEFAULT_SERVERS: McpServerConfig[] = [
   {
     id: "one-memory",
     name: "One Memory",
-    description: "One Memory 记忆系统（19 个工具）",
-    enabled: false,
+    description: "One Memory 记忆系统（38 个工具）",
+    enabled: true,
     serverPath: "/Users/mac/Desktop/AI-memory/packages/memory-mcp/build/index.js",
-    serverArgs: ["--embedder", "simple"],
+    serverArgs: [
+      "--embedder",
+      "simple",
+      "--codegraph-dir",
+      "/Users/mac/Desktop/AI-memory/.codegraph",
+    ],
     timeout: 30000,
     icon: "🧠",
     category: "memory",
@@ -64,7 +67,7 @@ const DEFAULT_SERVERS: McpServerConfig[] = [
  * 默认配置
  */
 const DEFAULT_CONFIG: McpConfig = {
-  enabled: false,
+  enabled: true,
   servers: DEFAULT_SERVERS,
 };
 
@@ -187,80 +190,71 @@ export const useMcpStore = create<McpState>()(
 
         console.log(`[McpStore] Connecting server: ${server.name}`);
 
-        const manager = getMcpManager();
-
-        try {
-          // 先移除已存在的 server（如果有）
-          if ((manager as any).servers?.has(id)) {
-            console.log(`[McpStore] Removing existing server "${id}" before reconnecting`);
-            manager.removeServer(id);
-          }
-
-          await manager.addServer(server);
-          get().refreshStatus();
-        } catch (error) {
-          console.error(`[McpStore] Failed to connect server "${id}":`, error);
-          get().refreshStatus();
-        }
+        // 浏览器环境：通过 HTTP bridge 让 server 端 spawn
+        const { bridgeConnectServers } = await import("../bridge/mcp-bridge");
+        const ok = await bridgeConnectServers([{ ...server, enabled: true }]);
+        console.log(`[McpStore] Browser connect "${server.name}" via bridge: ${ok}`);
+        get().refreshStatus();
       },
 
       // 断开单个 Server
       disconnectServer: (id: string) => {
         console.log(`[McpStore] Disconnecting server: ${id}`);
-        const manager = getMcpManager();
 
-        // 调用 manager.removeServer() 来断开并移除
-        if ((manager as any).servers?.has(id)) {
-          manager.removeServer(id);
-        }
-
-        get().refreshStatus();
+        // 浏览器环境：通过 HTTP bridge 让 server 端移除实例
+        (async () => {
+          const { bridgeDisconnectServer } = await import("../bridge/mcp-bridge");
+          await bridgeDisconnectServer(id);
+          get().refreshStatus();
+        })();
       },
 
       // 连接所有启用的 Server
       connectAll: async () => {
         console.log("[McpStore] Connecting all enabled servers...");
-        const manager = getMcpManager();
 
-        for (const server of get().config.servers) {
-          if (server.enabled) {
-            try {
-              await manager.addServer(server);
-            } catch (error) {
-              console.error(`[McpStore] Failed to connect "${server.name}":`, error);
-            }
-          }
-        }
-
+        // 浏览器环境：通过 HTTP bridge 让 server 端 spawn
+        const { bridgeConnectServers } = await import("../bridge/mcp-bridge");
+        const ok = await bridgeConnectServers(get().config.servers);
+        console.log(`[McpStore] Browser connectAll via bridge: ${ok}`);
         get().refreshStatus();
       },
 
       // 断开所有 Server
       disconnectAll: () => {
         console.log("[McpStore] Disconnecting all servers...");
-        getMcpManager().disconnectAll();
-        set({ serverStatuses: [] });
+
+        (async () => {
+          for (const s of get().config.servers) {
+            const { bridgeDisconnectServer } = await import("../bridge/mcp-bridge");
+            await bridgeDisconnectServer(s.id);
+          }
+          set({ serverStatuses: [] });
+        })();
       },
 
       // 刷新状态
       refreshStatus: () => {
-        const manager = getMcpManager();
-        const statuses = manager.getAllServerStatuses();
-        set({ serverStatuses: statuses });
+        (async () => {
+          const { bridgeFetchMcpStatuses } = await import("../bridge/mcp-bridge");
+          const statuses = await bridgeFetchMcpStatuses();
+          set({ serverStatuses: statuses });
+        })();
       },
     }),
     {
       name: "mcp-config",
+      version: 2,
       partialize: (state) => ({
         config: state.config,
       }),
+      migrate: (persistedState, version) => {
+        // v1 → v2：默认启用 One Memory server（旧配置 enabled: false 会覆盖新默认）
+        if (version < 2) {
+          return { config: DEFAULT_CONFIG };
+        }
+        return persistedState as McpPersistedState;
+      },
     }
   )
 );
-
-/**
- * 获取 MCP Manager 单例
- */
-export function getManager(): import("./mcp-manager").McpManager {
-  return getMcpManager();
-}

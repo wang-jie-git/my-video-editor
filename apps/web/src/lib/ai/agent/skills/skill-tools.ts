@@ -66,7 +66,7 @@ export function buildSkillTools(): AgentTool[] {
 		{
 			name: SKILL_LIST_TOOL,
 			description:
-				"列出所有可用技能。技能是可复用的工作流指令，适合视频编辑、FFmpeg 处理、格式转换等场景优化。",
+				"列出可复用的工作流技能（如 ffmpeg-migration、video-export-troubleshoot）。注意：这只是辅助工作流指令，不是你的全部能力；你的完整视频编辑工具集（时间线、AI 生成、FFmpeg 处理等）在系统提示词的 Your Capabilities 中列出。",
 			parameters: {
 				type: "object",
 				properties: {},

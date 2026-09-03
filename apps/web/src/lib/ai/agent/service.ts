@@ -278,6 +278,15 @@ export async function runAgentLoop({
 			})
 		: null;
 
+	// 将动态工具（如 Director 模式的 switch_expert_role）注册到工具注册表，
+	// 使 list_tools 等运行时读取工具能反映真实可用的完整工具集
+	try {
+		const { setDynamicTools } = await import("./tools");
+		setDynamicTools(switchRoleTool ? [switchRoleTool] : []);
+	} catch (error) {
+		console.warn("[Agent] Failed to register dynamic tools:", error);
+	}
+
 	const baseToolSchemas = getAllToolSchemas();
 	const conversationMessages = [...messages];
 	let rounds = 0;

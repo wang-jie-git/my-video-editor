@@ -10,7 +10,7 @@
  * 纯浏览器部署（无 server）时 fetch 失败 → 优雅降级（返回空，不抛错）。
  */
 import type { AgentTool } from "../tools/types";
-import type { McpServerConfig } from "../mcp/types";
+import type { McpServerConfig, McpServerStatus } from "../mcp/types";
 
 const BASE = "/api/ai/mcp";
 
@@ -19,6 +19,43 @@ interface BridgeMcpTool {
 	description: string;
 	inputSchema: { type: "object"; properties: Record<string, unknown> };
 	serverId: string;
+}
+
+/**
+ * 拉取 MCP Server 状态（从 server 端的 McpManager）
+ */
+export async function bridgeFetchMcpStatuses(): Promise<McpServerStatus[]> {
+	try {
+		const res = await fetch(`${BASE}/servers`, { cache: "no-store" });
+		if (!res.ok) return [];
+		const data = (await res.json()) as {
+			success: boolean;
+			statuses?: McpServerStatus[];
+		};
+		if (!data.success) return [];
+		return data.statuses ?? [];
+	} catch (error) {
+		console.warn("[MCP Bridge] fetch status failed (graceful):", error);
+		return [];
+	}
+}
+
+/**
+ * 断开一个 MCP Server（转发到 server 端 removeServer）
+ */
+export async function bridgeDisconnectServer(serverId: string): Promise<boolean> {
+	try {
+		const res = await fetch(`${BASE}/disconnect`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ serverId }),
+		});
+		const data = (await res.json()) as { success: boolean };
+		return data.success;
+	} catch (error) {
+		console.warn("[MCP Bridge] disconnect failed (graceful):", error);
+		return false;
+	}
 }
 
 /**
