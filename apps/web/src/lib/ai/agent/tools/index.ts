@@ -15,6 +15,7 @@ import { projectTools } from "./project-tools";
 import { timelineTools } from "./timeline-tools";
 import { ttsTools } from "./tts-tools";
 import { videoAnalysisTools } from "./video-analysis-tools";
+import { nativeAudioTools } from "./native-audio-tools";
 import { type AgentTool, buildToolSchema } from "./types";
 
 /**
@@ -120,6 +121,8 @@ const LOCAL_TOOLS: AgentTool[] = [
 	...ffmpegVideoTools,
 	// Phase 8: 视频理解工具（video_probe / video_analyze / video_ask + set_asr_config）
 	...videoAnalysisTools,
+	// Phase 9: 原生音频工具（WebAudio 零 FFmpeg：extract/mix/volume/fade/mute/speed/denoise）
+	...nativeAudioTools,
 ];
 
 
