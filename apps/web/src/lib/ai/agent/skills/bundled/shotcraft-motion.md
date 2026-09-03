@@ -9,6 +9,28 @@ tags: [motion, cinematography, transition, effects, beat-sync, sound-design]
 > 原库是 Remotion 代码实现；本技能只保留**平台无关的镜头语言、帧级参数与判例**，
 > 全部适配到本编辑器的时间线工具（update_element / concat_with_transitions /
 > adjust_video_speed / add_text_to_timeline / fade_audio / mix_audio）。
+>
+> 📚 **全量配方卡库（157 张）**：位于同目录 `shotcraft-cards/`（10 个分类文件），
+> 需要查具体配方时用文件读取工具按需读取（列表见文末附录）。本文件只保留精华摘要。
+
+## 〇、配方卡库索引（157 张全量）
+
+| 分类 | 文件 | 数量 | 典型场景 |
+|------|------|------|----------|
+| 开场 opening | shotcraft-cards/opening.md | 11 | 品牌字标压印、logo 演进、抽象开场 |
+| 转场 transition | shotcraft-cards/transition.md | 19 | 章节切换、隐藏剪辑、幕布/擦除/推入 |
+| 特效 effects | shotcraft-cards/effects.md | 17 | 粒子、玻璃拟态、故障、辉光 |
+| 节奏 rhythm | shotcraft-cards/rhythm.md | 11 | 音乐卡点、节拍驱动、快剪节奏 |
+| 交互 interaction | shotcraft-cards/interaction.md | 15 | 点击反馈、悬停动效、手势 |
+| 文字版式 typography | shotcraft-cards/typography.md | 26 | 标题入场、字卡、文字特效 |
+| 数据 data | shotcraft-cards/data.md | 13 | 数字滚动、图表动画、仪表盘 |
+| UI 入场 ui-entrance | shotcraft-cards/ui-entrance.md | 28 | 元素队列入场、窗口卡、列表 |
+| 运镜 camera | shotcraft-cards/camera.md | 10 | 推拉摇移、变焦、跟镜 |
+| 收场 outro | shotcraft-cards/outro.md | 7 | 结束字标、sign-off、CTA |
+
+> 使用方式：用户需求命中某分类时，先读对应文件找最贴近的配方卡，再按卡内
+> 参数表在本编辑器工具链中实现。每张卡都含：一句话（是什么）/ 适用 / 时长 /
+> 能量 / 意图 / 动效核心 / 参数表 / 已知坑。
 
 ## 一、核心理念（四条铁律）
 
@@ -195,3 +217,24 @@ tags: [motion, cinematography, transition, effects, beat-sync, sound-design]
   - 单镜头 → 直接选对应类别配方卡，按参数表实现
 - 配方卡参数是**调校起点非实战定稿**——首次实战须以真实素材回验
 - 与 jianying/其他技能的分工：本技能只管镜头语言与节奏设计，不涉及格式转换
+
+## 九、全量配方卡库（157 张）读取指引
+
+> 10 个分类文件位于 `bundled/shotcraft-cards/`（与本文档同目录）。
+> 需要查具体配方时，用文件读取工具按需读取对应分类文件，定位最贴近的卡片。
+
+| 场景需求 | 读取文件 |
+|----------|----------|
+| 开场/品牌字标/logo 演进 | shotcraft-cards/opening.md |
+| 章节转场/隐藏剪辑/幕布/擦除/推入 | shotcraft-cards/transition.md |
+| 粒子/玻璃拟态/故障/辉光特效 | shotcraft-cards/effects.md |
+| 音乐卡点/节拍驱动/快剪 | shotcraft-cards/rhythm.md |
+| 点击反馈/悬停/手势交互 | shotcraft-cards/interaction.md |
+| 标题入场/字卡/文字特效 | shotcraft-cards/typography.md |
+| 数字滚动/图表/仪表盘 | shotcraft-cards/data.md |
+| 元素队列入场/窗口卡/列表 | shotcraft-cards/ui-entrance.md |
+| 推拉摇移/变焦/跟镜 | shotcraft-cards/camera.md |
+| 结束字标/sign-off/CTA | shotcraft-cards/outro.md |
+
+每张卡结构：一句话（是什么）/ 适用 / 时长 / 能量 / 意图 / 动效核心 / 参数表 / 已知坑。
+知识库由脚本从 video-shotcraft（Apache-2.0）自动提取，已剥离 Remotion 代码段。
