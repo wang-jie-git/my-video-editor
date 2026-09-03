@@ -51,6 +51,20 @@ docker compose up redis serverless-redis-http -d   # Backing services only
 docker compose up --build                          # Full stack
 ```
 
+### Media Download (素材下载, via ReClip)
+When the user asks to download video/audio (YouTube, Bilibili, TikTok, etc.), use the ReClip CLI — do NOT curl media URLs directly (HTML/redirect pages or anti-scraping blocks).
+
+```bash
+scripts/reclip-dl.sh info "https://www.youtube.com/watch?v=xxx"
+scripts/reclip-dl.sh download "https://www.youtube.com/watch?v=xxx"          # MP4
+scripts/reclip-dl.sh download "https://youtu.be/xxx" audio                   # MP3
+scripts/reclip-dl.sh download "https://vimeo.com/xxx" video --height 720 --out assets/refs
+```
+
+- ReClip = local yt-dlp wrapper at http://localhost:8899 (source `~/Tools/reclip`); script auto-starts it.
+- Downloads land in `downloads/reclip/`; script prints the saved path.
+- Only download content the user has the right to use.
+
 ## Architecture
 
 ### Monorepo Structure

@@ -25,3 +25,6 @@ bun.lockb
 
 # moat venv (python virtual env, do not commit)
 .venv-moat/
+
+# ReClip 下载素材（不入库）
+downloads/reclip/
