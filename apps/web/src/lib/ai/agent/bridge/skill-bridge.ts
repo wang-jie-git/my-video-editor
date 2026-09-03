@@ -66,7 +66,47 @@ export async function bridgeFetchSkill(
 }
 
 /**
- * 构建 Skill AgentTool 列表（列表/内容均通过 HTTP 从 server 拉取）
+ * 创建/更新技能（通过 POST 写入 server 端文件系统）
+ */
+export async function bridgeCreateSkill(
+	name: string,
+	content: string,
+): Promise<{ success: boolean; message: string; path?: string }> {
+	try {
+		const res = await fetch(BASE, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ name, content }),
+			cache: "no-store",
+		});
+		const data = (await res.json()) as {
+			success: boolean;
+			message: string;
+			path?: string;
+			loaded?: boolean;
+		};
+		if (!res.ok || !data.success) {
+			return {
+				success: false,
+				message: data.message || `创建失败（HTTP ${res.status}）`,
+			};
+		}
+		return {
+			success: true,
+			message: data.message,
+			path: data.path,
+		};
+	} catch (error) {
+		console.warn("[Skill Bridge] create skill failed:", error);
+		return {
+			success: false,
+			message: "创建技能失败：无法连接到技能服务",
+		};
+	}
+}
+
+/**
+ * 构建 Skill AgentTool 列表（列表/内容/创建均通过 HTTP 从 server 拉取）
  */
 export function buildBridgeSkillTools(): AgentTool[] {
 	return [
@@ -122,6 +162,43 @@ export function buildBridgeSkillTools(): AgentTool[] {
 						content: skill.content,
 						tags: skill.tags ?? [],
 					},
+				};
+			},
+		},
+		{
+			name: "skill_create",
+			description:
+				"创建或更新可复用技能（SKILL.md）。当用户要求把某个工作流/常用操作固化为技能、或更新已有技能时使用。技能内容须含 frontmatter（---\\nname: 技能名\\ndescription: 技能描述（含触发场景）\\n---）和正文（# 标题 + ## When to use 触发场景 + ## Workflow 步骤 + ## Rules 规则）。描述要写清楚何时触发。",
+			parameters: {
+				type: "object",
+				properties: {
+					name: {
+						type: "string",
+						description:
+							"技能名称（小写 kebab-case，如 video-mix-workflow）",
+					},
+					content: {
+						type: "string",
+						description:
+							"SKILL.md 完整内容（含 frontmatter 和正文）",
+					},
+				},
+				required: ["name", "content"],
+			},
+			execute: async (args: Record<string, unknown>) => {
+				const name = String(args.name ?? "").trim();
+				const content = String(args.content ?? "");
+				if (!name) {
+					return { success: false, message: "缺少技能名称 name" };
+				}
+				if (!content) {
+					return { success: false, message: "缺少技能内容 content" };
+				}
+				const result = await bridgeCreateSkill(name, content);
+				return {
+					success: result.success,
+					message: result.message,
+					data: result.path ? { path: result.path } : undefined,
 				};
 			},
 		},

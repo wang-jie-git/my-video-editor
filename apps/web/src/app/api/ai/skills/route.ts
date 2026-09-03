@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { loadSkillRegistry } from "@/lib/ai/agent/skills/loader";
+import { loadSkillRegistry, loadExternalSkills } from "@/lib/ai/agent/skills/loader";
 import { getSkillRegistry } from "@/lib/ai/agent/skills/registry";
 
 export const dynamic = "force-dynamic";
@@ -64,6 +64,83 @@ export async function GET(request: Request) {
 				success: false,
 				message: error instanceof Error ? error.message : "Failed to load skills",
 				skills: [],
+			},
+			{ status: 500 },
+		);
+	}
+}
+
+/**
+ * POST /api/ai/skills
+ *
+ * 创建或更新项目级技能（.openharness/skills/<name>.md）。
+ * - name 必须是小写 kebab-case（防路径穿越）
+ * - content 必须包含 frontmatter（name/description）+ 正文
+ * - 写入后重新加载外部技能，验证新技能可被 loader 识别
+ */
+export async function POST(request: Request) {
+	try {
+		const body = (await request.json()) as {
+			name?: string;
+			content?: string;
+		};
+		const name = body.name?.trim() ?? "";
+		const content = body.content ?? "";
+
+		// 名称校验：仅允许小写字母/数字/连字符，防路径穿越
+		if (!name) {
+			return NextResponse.json(
+				{ success: false, message: "缺少技能名称 name" },
+				{ status: 400 },
+			);
+		}
+		if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(name)) {
+			return NextResponse.json(
+				{
+					success: false,
+					message:
+						"技能名称只能包含小写字母、数字、连字符（kebab-case），如 video-mix-workflow",
+				},
+				{ status: 400 },
+			);
+		}
+		if (!content || content.trim().length < 20) {
+			return NextResponse.json(
+				{ success: false, message: "技能内容过短（至少 20 字符）" },
+				{ status: 400 },
+			);
+		}
+
+		// 写入项目级技能目录（loader 的 USER_SKILL_DIRS_REL 首个路径）
+		const path = await import("node:path");
+		const fs = await import("node:fs/promises");
+		const dir = path.join(process.cwd(), ".openharness", "skills");
+		await fs.mkdir(dir, { recursive: true });
+		const filePath = path.join(dir, `${name}.md`);
+		await fs.writeFile(filePath, content, "utf-8");
+
+		// 重新加载外部技能并验证新技能可识别
+		const registry = getSkillRegistry();
+		const external = await loadExternalSkills();
+		for (const skill of external) {
+			registry.register(skill);
+		}
+		const loaded = registry.get(name);
+
+		return NextResponse.json({
+			success: true,
+			message: loaded
+				? `技能 "${name}" 已保存并成功加载（${filePath}）`
+				: `技能 "${name}" 已写入（${filePath}），但未被 loader 识别，请检查 frontmatter 格式`,
+			path: filePath,
+			loaded: Boolean(loaded),
+		});
+	} catch (error) {
+		console.error("Failed to create skill:", error);
+		return NextResponse.json(
+			{
+				success: false,
+				message: error instanceof Error ? error.message : "Failed to create skill",
 			},
 			{ status: 500 },
 		);

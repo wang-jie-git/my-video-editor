@@ -1,17 +1,20 @@
 /**
  * Skill Tools - 暴露给 AI 助手的技能工具
  *
- * 提供两个技能相关工具：
+ * 提供三个技能相关工具：
  * - skill_list：列出所有可用技能
  * - skill_load：加载技能内容（将技能指令注入对话上下文）
+ * - skill_create：创建/更新技能（写入 .openharness/skills/<name>.md）
  */
 import { getSkillRegistry } from "./registry";
+import { loadExternalSkills } from "./loader";
 import type { SkillLoadResult } from "./types";
 import type { AgentTool } from "../tools/types";
 
 /** 技能工具名称 */
 export const SKILL_LIST_TOOL = "skill_list";
 export const SKILL_LOAD_TOOL = "skill_load";
+export const SKILL_CREATE_TOOL = "skill_create";
 
 /**
  * 列出所有可用技能
@@ -31,6 +34,60 @@ export async function listSkills(): Promise<SkillLoadResult> {
 			tags: s.tags ?? [],
 		})),
 	};
+}
+
+/**
+ * 创建或更新技能（写入 .openharness/skills/<name>.md 并重新注册）
+ * name 必须是小写 kebab-case（防路径穿越），与 server API 同规则
+ */
+export async function createSkill(
+	name: string,
+	content: string,
+): Promise<SkillLoadResult> {
+	const trimmed = name.trim();
+	if (!trimmed) {
+		return { success: false, message: "缺少技能名称 name" };
+	}
+	if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(trimmed)) {
+		return {
+			success: false,
+			message: "技能名称只能包含小写字母、数字、连字符（kebab-case）",
+		};
+	}
+	if (!content || content.trim().length < 20) {
+		return { success: false, message: "技能内容过短（至少 20 字符）" };
+	}
+
+	try {
+		const fs = await import("node:fs/promises");
+		const path = await import("node:path");
+		const dir = path.join(process.cwd(), ".openharness", "skills");
+		await fs.mkdir(dir, { recursive: true });
+		const filePath = path.join(dir, `${trimmed}.md`);
+		await fs.writeFile(filePath, content, "utf-8");
+
+		// 重新加载外部技能，验证新技能可识别
+		const registry = getSkillRegistry();
+		const external = await loadExternalSkills();
+		for (const skill of external) {
+			registry.register(skill);
+		}
+		const loaded = registry.get(trimmed);
+
+		return {
+			success: true,
+			message: loaded
+				? `技能 "${trimmed}" 已保存并成功加载（${filePath}）`
+				: `技能 "${trimmed}" 已写入（${filePath}），但未被 loader 识别，请检查 frontmatter 格式`,
+			data: { path: filePath, loaded: Boolean(loaded) },
+		};
+	} catch (error) {
+		console.warn("[Skills] Failed to create skill:", error);
+		return {
+			success: false,
+			message: error instanceof Error ? error.message : "创建技能失败",
+		};
+	}
 }
 
 /**
@@ -125,6 +182,36 @@ export function buildSkillTools(): AgentTool[] {
 								tags: skillData.tags ?? [],
 							}
 						: undefined,
+				};
+			},
+		},
+		{
+			name: SKILL_CREATE_TOOL,
+			description:
+				"创建或更新可复用技能（SKILL.md）。当用户要求把某个工作流/常用操作固化为技能、或更新已有技能时使用。技能内容须含 frontmatter（---\\nname: 技能名\\ndescription: 技能描述（含触发场景）\\n---）和正文（# 标题 + ## When to use 触发场景 + ## Workflow 步骤 + ## Rules 规则）。描述要写清楚何时触发。",
+			parameters: {
+				type: "object",
+				properties: {
+					name: {
+						type: "string",
+						description:
+							"技能名称（小写 kebab-case，如 video-mix-workflow）",
+					},
+					content: {
+						type: "string",
+						description: "SKILL.md 完整内容（含 frontmatter 和正文）",
+					},
+				},
+				required: ["name", "content"],
+			},
+			execute: async (args: Record<string, unknown>) => {
+				const name = String(args.name ?? "");
+				const content = String(args.content ?? "");
+				const result = await createSkill(name, content);
+				return {
+					success: result.success,
+					message: result.message,
+					data: result.data as Record<string, unknown> | undefined,
 				};
 			},
 		},

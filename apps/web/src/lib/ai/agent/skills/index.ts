@@ -9,8 +9,10 @@ export * from "./skill-tools";
 export {
 	SKILL_LIST_TOOL,
 	SKILL_LOAD_TOOL,
+	SKILL_CREATE_TOOL,
 	listSkills,
 	loadSkill,
+	createSkill,
 	buildSkillTools,
 	isSkillsReady,
 } from "./skill-tools";
