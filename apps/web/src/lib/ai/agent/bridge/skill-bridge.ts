@@ -17,6 +17,8 @@ interface BridgeSkillMeta {
 	description: string;
 	source: string;
 	tags: string[];
+	contentLength?: number;
+	path?: string;
 }
 
 interface BridgeSkillFull extends BridgeSkillMeta {
@@ -106,7 +108,38 @@ export async function bridgeCreateSkill(
 }
 
 /**
- * 构建 Skill AgentTool 列表（列表/内容/创建均通过 HTTP 从 server 拉取）
+ * 淘汰（删除）项目级技能
+ */
+export async function bridgeDeleteSkill(
+	name: string,
+): Promise<{ success: boolean; message: string }> {
+	try {
+		const res = await fetch(`${BASE}?name=${encodeURIComponent(name)}`, {
+			method: "DELETE",
+			cache: "no-store",
+		});
+		const data = (await res.json()) as {
+			success: boolean;
+			message: string;
+		};
+		if (!res.ok || !data.success) {
+			return {
+				success: false,
+				message: data.message || `删除失败（HTTP ${res.status}）`,
+			};
+		}
+		return { success: true, message: data.message };
+	} catch (error) {
+		console.warn("[Skill Bridge] delete skill failed:", error);
+		return {
+			success: false,
+			message: "删除技能失败：无法连接到技能服务",
+		};
+	}
+}
+
+/**
+ * 构建 Skill AgentTool 列表（列表/内容/创建/删除均通过 HTTP 从 server 拉取）
  */
 export function buildBridgeSkillTools(): AgentTool[] {
 	return [
@@ -122,7 +155,7 @@ export function buildBridgeSkillTools(): AgentTool[] {
 				const skills = await bridgeFetchSkills();
 				return {
 					success: true,
-					message: `共 ${skills.length} 个技能`,
+					message: `共 ${skills.length} 个技能（可通过 skill_load 查看内容后判断是否重复/需要整合）`,
 					data: { skills },
 				};
 			},
@@ -199,6 +232,32 @@ export function buildBridgeSkillTools(): AgentTool[] {
 					success: result.success,
 					message: result.message,
 					data: result.path ? { path: result.path } : undefined,
+				};
+			},
+		},
+		{
+			name: "skill_delete",
+			description:
+				"淘汰（删除）一个不再需要或已被整合的技能。删除前先 skill_load 确认该技能内容已被其他技能覆盖，避免误删。仅 project 技能可删（内置技能不可删）。",
+			parameters: {
+				type: "object",
+				properties: {
+					name: {
+						type: "string",
+						description: "要删除的技能名称（来自 skill_list）",
+					},
+				},
+				required: ["name"],
+			},
+			execute: async (args: Record<string, unknown>) => {
+				const name = String(args.name ?? "").trim();
+				if (!name) {
+					return { success: false, message: "缺少技能名称 name" };
+				}
+				const result = await bridgeDeleteSkill(name);
+				return {
+					success: result.success,
+					message: result.message,
 				};
 			},
 		},

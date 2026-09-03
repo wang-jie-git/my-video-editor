@@ -1,13 +1,14 @@
 /**
  * Skill Tools - 暴露给 AI 助手的技能工具
  *
- * 提供三个技能相关工具：
+ * 提供四个技能相关工具：
  * - skill_list：列出所有可用技能
  * - skill_load：加载技能内容（将技能指令注入对话上下文）
  * - skill_create：创建/更新技能（写入 .openharness/skills/<name>.md）
+ * - skill_delete：淘汰技能（删除 .openharness/skills/<name>.md）
  */
 import { getSkillRegistry } from "./registry";
-import { loadExternalSkills } from "./loader";
+import { loadSkillRegistry, loadExternalSkills } from "./loader";
 import type { SkillLoadResult } from "./types";
 import type { AgentTool } from "../tools/types";
 
@@ -15,6 +16,7 @@ import type { AgentTool } from "../tools/types";
 export const SKILL_LIST_TOOL = "skill_list";
 export const SKILL_LOAD_TOOL = "skill_load";
 export const SKILL_CREATE_TOOL = "skill_create";
+export const SKILL_DELETE_TOOL = "skill_delete";
 
 /**
  * 列出所有可用技能
@@ -26,12 +28,14 @@ export async function listSkills(): Promise<SkillLoadResult> {
 
 	return {
 		success: true,
-		message: `共 ${skills.length} 个技能`,
+		message: `共 ${skills.length} 个技能（可通过 skill_load 查看内容后判断是否重复/需要整合）`,
 		data: skills.map((s) => ({
 			name: s.name,
 			description: s.description,
 			source: s.source,
 			tags: s.tags ?? [],
+			contentLength: s.content?.length ?? 0,
+			path: s.path ?? "",
 		})),
 	};
 }
@@ -86,6 +90,65 @@ export async function createSkill(
 		return {
 			success: false,
 			message: error instanceof Error ? error.message : "创建技能失败",
+		};
+	}
+}
+
+/**
+ * 淘汰（删除）项目级技能
+ * - 仅允许删除 source=project 的技能
+ * - name 走同款 kebab-case 校验
+ */
+export async function deleteSkill(
+	name: string,
+): Promise<SkillLoadResult> {
+	const trimmed = name.trim();
+	if (!trimmed) {
+		return { success: false, message: "缺少技能名称 name" };
+	}
+	if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(trimmed)) {
+		return {
+			success: false,
+			message: "技能名称只能包含小写字母、数字、连字符（kebab-case）",
+		};
+	}
+
+	try {
+		const registry = getSkillRegistry();
+		const skill = registry.get(trimmed);
+		if (!skill) {
+			return { success: false, message: `技能 "${trimmed}" 未找到` };
+		}
+		if (skill.source !== "project") {
+			return {
+				success: false,
+				message: `技能 "${trimmed}" 来源为 ${skill.source}，不可删除（仅 project 技能可淘汰）`,
+			};
+		}
+
+		const fs = await import("node:fs/promises");
+		const path = await import("node:path");
+		const filePath = path.join(
+			process.cwd(),
+			".openharness",
+			"skills",
+			`${trimmed}.md`,
+		);
+		await fs.unlink(filePath);
+
+		// 重新加载
+		registry.clear();
+		await loadSkillRegistry();
+
+		return {
+			success: true,
+			message: `技能 "${trimmed}" 已淘汰（${filePath}）`,
+		};
+	} catch (error) {
+		console.warn("[Skills] Failed to delete skill:", error);
+		return {
+			success: false,
+			message: error instanceof Error ? error.message : "删除技能失败",
 		};
 	}
 }
@@ -212,6 +275,29 @@ export function buildSkillTools(): AgentTool[] {
 					success: result.success,
 					message: result.message,
 					data: result.data as Record<string, unknown> | undefined,
+				};
+			},
+		},
+		{
+			name: SKILL_DELETE_TOOL,
+			description:
+				"淘汰（删除）一个不再需要或已被整合的技能。删除前先 skill_load 确认该技能内容已被其他技能覆盖，避免误删。仅 project 技能可删（内置技能不可删）。",
+			parameters: {
+				type: "object",
+				properties: {
+					name: {
+						type: "string",
+						description: "要删除的技能名称（来自 skill_list）",
+					},
+				},
+				required: ["name"],
+			},
+			execute: async (args: Record<string, unknown>) => {
+				const name = String(args.name ?? "");
+				const result = await deleteSkill(name);
+				return {
+					success: result.success,
+					message: result.message,
 				};
 			},
 		},

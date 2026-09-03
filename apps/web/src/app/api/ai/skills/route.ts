@@ -3,7 +3,6 @@ import { loadSkillRegistry, loadExternalSkills } from "@/lib/ai/agent/skills/loa
 import { getSkillRegistry } from "@/lib/ai/agent/skills/registry";
 
 export const dynamic = "force-dynamic";
-
 /**
  * GET /api/ai/skills
  *
@@ -54,6 +53,8 @@ export async function GET(request: Request) {
 				description: s.description,
 				source: s.source,
 				tags: s.tags ?? [],
+				contentLength: s.content?.length ?? 0,
+				path: s.path ?? "",
 			})),
 			state,
 		});
@@ -141,6 +142,80 @@ export async function POST(request: Request) {
 			{
 				success: false,
 				message: error instanceof Error ? error.message : "Failed to create skill",
+			},
+			{ status: 500 },
+		);
+	}
+}
+
+/**
+ * DELETE /api/ai/skills?name=<技能名>
+ *
+ * 淘汰（删除）项目级技能。
+ * - 仅允许删除 source=project 的技能（内置/用户全局技能不可删）
+ * - name 走同款 kebab-case 校验，防路径穿越
+ */
+export async function DELETE(request: Request) {
+	try {
+		const url = new URL(request.url);
+		const name = url.searchParams.get("name")?.trim() ?? "";
+
+		if (!name) {
+			return NextResponse.json(
+				{ success: false, message: "缺少技能名称 name" },
+				{ status: 400 },
+			);
+		}
+		if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(name)) {
+			return NextResponse.json(
+				{
+					success: false,
+					message: "技能名称只能包含小写字母、数字、连字符（kebab-case）",
+				},
+				{ status: 400 },
+			);
+		}
+
+		// 检查技能是否存在 + 来源
+		await loadSkillRegistry();
+		const registry = getSkillRegistry();
+		const skill = registry.get(name);
+		if (!skill) {
+			return NextResponse.json(
+				{ success: false, message: `技能 "${name}" 未找到` },
+				{ status: 404 },
+			);
+		}
+		if (skill.source !== "project") {
+			return NextResponse.json(
+				{
+					success: false,
+					message: `技能 "${name}" 来源为 ${skill.source}，不可删除（仅 project 技能可淘汰）`,
+				},
+				{ status: 403 },
+			);
+		}
+
+		// 删除项目级技能文件
+		const path = await import("node:path");
+		const fs = await import("node:fs/promises");
+		const filePath = path.join(process.cwd(), ".openharness", "skills", `${name}.md`);
+		await fs.unlink(filePath);
+
+		// 重新加载
+		registry.clear();
+		await loadSkillRegistry();
+
+		return NextResponse.json({
+			success: true,
+			message: `技能 "${name}" 已淘汰（${filePath}）`,
+		});
+	} catch (error) {
+		console.error("Failed to delete skill:", error);
+		return NextResponse.json(
+			{
+				success: false,
+				message: error instanceof Error ? error.message : "Failed to delete skill",
 			},
 			{ status: 500 },
 		);
