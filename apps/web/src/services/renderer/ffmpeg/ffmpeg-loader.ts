@@ -5,6 +5,8 @@
  */
 
 import type { FFmpegConfig } from './types'
+import { FFmpeg } from '@ffmpeg/ffmpeg'
+import { fetchFile, toBlobURL } from '@ffmpeg/util'
 
 export class FFmpegLoader {
   private static instance: FFmpegLoader | null = null
@@ -63,15 +65,11 @@ export class FFmpegLoader {
     try {
       console.log('[FFmpeg] 开始加载...')
 
-      // 完全动态导入，避免 Next.js 16 + Turbopack 的静态分析
-      const ffmpegModule = await import('@ffmpeg/ffmpeg')
-      const utilModule = await import('@ffmpeg/util')
-
-      const { FFmpeg } = ffmpegModule
-      const { fetchFile, toBlobURL } = utilModule
+      const ffmpegModule = FFmpeg
+      const utilModule = { fetchFile, toBlobURL }
 
       // 创建 FFmpeg 实例
-      this.ffmpeg = new FFmpeg()
+      this.ffmpeg = new ffmpegModule()
 
       // 配置日志
       if (this.config.logLevel !== 'none') {
