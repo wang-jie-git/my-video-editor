@@ -16,6 +16,7 @@ import { timelineTools } from "./timeline-tools";
 import { ttsTools } from "./tts-tools";
 import { videoAnalysisTools } from "./video-analysis-tools";
 import { nativeAudioTools } from "./native-audio-tools";
+import { assetIndexTools } from "./asset-index-tools";
 import { type AgentTool, buildToolSchema } from "./types";
 
 /**
@@ -123,6 +124,8 @@ const LOCAL_TOOLS: AgentTool[] = [
 	...videoAnalysisTools,
 	// Phase 9: 原生音频工具（WebAudio 零 FFmpeg：extract/mix/volume/fade/mute/speed/denoise）
 	...nativeAudioTools,
+	// Phase 10: 语义素材索引（index_asset / search_assets / list_asset_index）
+	...assetIndexTools,
 ];
 
 
