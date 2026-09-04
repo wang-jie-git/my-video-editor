@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { mkdir, copyFile } from "fs/promises";
+import path from "path";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -17,7 +19,8 @@ interface DownloadRequest {
  *
  * 下载视频/音频素材。自动路由：
  * - YouTube → ReClip (yt-dlp wrapper, localhost:8899)
- * - B站/抖音/小红书等 → nexus-browser 导航 + JS 提取视频地址
+ * - B站/抖音/小红书等 → nexus-browser /video/download/with_browser
+ *   （nexus 负责浏览器 cookies + 直链提取 + 落盘，实测抖音/小红书/B站可用）
  */
 export async function POST(request: Request) {
   try {
@@ -133,63 +136,10 @@ async function downloadViaReclip(
 
 // ── Nexus Browser 路径（B站/抖音/小红书等）──
 
-const PLATFORM_JS: Record<
-  string,
-  { videoExtractor: string; platform: string }
-> = {
-  bilibili: {
-    platform: "B站",
-    // B站视频地址在 <video> 标签的 src 属性或 window.__playinfo__
-    videoExtractor: `
-      (function() {
-        var video = document.querySelector('video');
-        if (video && video.src) return video.src;
-        var playinfo = window.__playinfo__;
-        if (playinfo) {
-          var durl = playinfo?.data?.dash?.video?.[0]?.baseUrl;
-          if (durl) return durl;
-          var durl2 = playinfo?.data?.durl?.[0]?.url;
-          if (durl2) return durl2;
-        }
-        return null;
-      })()
-    `,
-  },
-  douyin: {
-    platform: "抖音",
-    // 抖音视频在 video 标签
-    videoExtractor: `
-      (function() {
-        var video = document.querySelector('video');
-        if (video && video.src) return video.src;
-        var source = video?.querySelector('source');
-        if (source && source.src) return source.src;
-        return null;
-      })()
-    `,
-  },
-  xiaohongshu: {
-    platform: "小红书",
-    videoExtractor: `
-      (function() {
-        var video = document.querySelector('video');
-        if (video && video.src) return video.src;
-        return null;
-      })()
-    `,
-  },
-  default: {
-    platform: "网页",
-    videoExtractor: `
-      (function() {
-        var video = document.querySelector('video');
-        if (video && video.src) return video.src;
-        var source = video?.querySelector('source');
-        if (source && source.src) return source.src;
-        return null;
-      })()
-    `,
-  },
+const DOMAIN_HINT: Record<string, string> = {
+  bilibili: "bilibili",
+  douyin: "douyin",
+  xiaohongshu: "xiaohongshu",
 };
 
 function detectPlatform(url: string): string {
@@ -204,122 +154,94 @@ async function downloadViaNexus(
   format: "video" | "audio",
 ) {
   const platform = detectPlatform(url);
-  const config = PLATFORM_JS[platform] ?? PLATFORM_JS.default;
 
-  // 1. 导航到视频页面
-  const navResp = await fetch(`${NEXUS_URL}/browser/navigate`, {
+  // 1. 直接调用 nexus-browser 的下载端点（浏览器 cookies + 直链提取 + 落盘）
+  const dlResp = await fetch(`${NEXUS_URL}/video/download/with_browser`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({
+      url,
+      domain: DOMAIN_HINT[platform] ?? platform,
+      format_spec: format === "audio" ? "bestaudio/best" : "best[height<=1080]/best",
+    }),
   });
-  if (!navResp.ok) {
+
+  if (!dlResp.ok) {
+    let detail = `HTTP ${dlResp.status}`;
+    try {
+      const err = (await dlResp.json()) as { detail?: string };
+      if (err.detail) detail = err.detail;
+    } catch {
+      // ignore parse error
+    }
     return NextResponse.json(
-      { success: false, message: `Nexus 导航失败: ${navResp.status}` },
+      { success: false, message: `Nexus 下载失败: ${detail}` },
       { status: 502 },
     );
   }
 
-  // 2. 等待视频元素加载
-  await sleep(3000);
-
-  // 3. 执行 JS 提取视频地址
-  const evalResp = await fetch(`${NEXUS_URL}/browser/evaluate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ js_code: config.videoExtractor }),
-  });
-  const evalData = (await evalResp.json()) as {
-    result?: string;
-    error?: string;
+  const dlData = (await dlResp.json()) as {
+    status?: string;
+    result?: {
+      file_path?: string;
+      title?: string;
+      platform?: string;
+      url?: string;
+    };
   };
 
-  if (!evalData.result) {
-    // 回退：获取页面内容，尝试从 HTML 中提取视频地址
+  if (dlData.status !== "success" || !dlData.result?.file_path) {
     return NextResponse.json({
       success: false,
-      message: `${config.platform} 视频地址提取失败。可能需要登录 cookies。`,
-      data: { platform, error: evalData.error },
+      message: `Nexus 未返回下载文件: ${JSON.stringify(dlData).slice(0, 300)}`,
     });
   }
 
-  const videoUrl = evalData.result;
+  const { file_path, title } = dlData.result;
 
-  // 4. 通过 ReClip 下载提取到的视频地址（yt-dlp 可以下载直链）
-  const downloadResp = await fetch(`${RECLIP_URL}/api/download`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: videoUrl, format }),
-  });
-  const dlResult = (await downloadResp.json()) as {
-    job_id?: string;
-    error?: string;
-  };
+  // 2. 把文件复制到 public/downloads/，让前端同源可访问
+  const srcPath = file_path;
+  const filename = path.basename(srcPath);
+  const destDir = path.join(process.cwd(), "public", "downloads");
+  const destPath = path.join(destDir, filename);
 
-  if (dlResult.error || !dlResult.job_id) {
-    // 回退方案：直接返回视频地址，让前端下载
+  try {
+    await mkdir(destDir, { recursive: true });
+    await copyFile(srcPath, destPath);
+  } catch (e) {
     return NextResponse.json({
-      success: true,
-      message: `已提取 ${config.platform} 视频地址（直链下载回退）`,
-      data: {
-        provider: "nexus-direct",
-        platform,
-        videoUrl,
-        downloadUrl: videoUrl,
-      },
+      success: false,
+      message: `文件复制到素材目录失败: ${e instanceof Error ? e.message : e}`,
+      data: { filePath: srcPath },
     });
   }
 
-  // 5. 轮询下载状态
-  const maxRetries = 120;
-  for (let i = 0; i < maxRetries; i++) {
-    await sleep(5000);
-    const statusResp = await fetch(
-      `${RECLIP_URL}/api/status/${dlResult.job_id}`,
-    );
-    const status = (await statusResp.json()) as {
-      status?: string;
-      error?: string;
-      filename?: string;
-    };
-
-    if (status.status === "completed" && status.filename) {
-      return NextResponse.json({
-        success: true,
-        message: `${config.platform} 下载完成: ${status.filename}`,
-        data: {
-          provider: "nexus-reclip",
-          platform,
-          jobId: dlResult.job_id,
-          filename: status.filename,
-          downloadUrl: `${RECLIP_URL}/api/file/${dlResult.job_id}`,
-        },
-      });
-    }
-    if (status.status === "failed" || status.error) {
-      // 回退：返回直链
-      return NextResponse.json({
-        success: true,
-        message: `${config.platform} 视频地址已提取（下载回退为直链）`,
-        data: {
-          provider: "nexus-direct",
-          platform,
-          videoUrl,
-          downloadUrl: videoUrl,
-        },
-      });
-    }
-  }
+  const downloadUrl = `/downloads/${filename}`;
 
   return NextResponse.json({
     success: true,
-    message: `${config.platform} 视频地址已提取（下载超时，回退为直链）`,
+    message: `${platform === "default" ? "视频" : platformName(platform)} 下载完成: ${title ?? filename}`,
     data: {
-      provider: "nexus-direct",
+      provider: "nexus",
       platform,
-      videoUrl,
-      downloadUrl: videoUrl,
+      filename,
+      downloadUrl,
+      videoUrl: downloadUrl,
     },
   });
+}
+
+function platformName(platform: string): string {
+  switch (platform) {
+    case "bilibili":
+      return "B站";
+    case "douyin":
+      return "抖音";
+    case "xiaohongshu":
+      return "小红书";
+    default:
+      return "视频";
+  }
 }
 
 function sleep(ms: number): Promise<void> {
