@@ -2,6 +2,7 @@ import type { OpenAIToolSchema } from "../types";
 import { aiGenerationTools } from "./ai-generation-tools";
 import { captionTools } from "./caption-tools";
 import { characterTools } from "./character-tools";
+import { downloadTools } from "./download-tools";
 import { ffmpegAudioTools } from "./ffmpeg-audio-tools";
 import { ffmpegBasicTools } from "./ffmpeg-basic-tools";
 import { ffmpegFilterTools } from "./ffmpeg-filter-tools";
@@ -126,6 +127,8 @@ const LOCAL_TOOLS: AgentTool[] = [
 	...nativeAudioTools,
 	// Phase 10: 语义素材索引（index_asset / search_assets / list_asset_index）
 	...assetIndexTools,
+	// 素材下载（YouTube/B站/抖音/小红书等）
+	...downloadTools,
 ];
 
 

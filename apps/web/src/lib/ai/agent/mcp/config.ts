@@ -45,6 +45,22 @@ export const DEFAULT_MCP_SERVERS: McpServerConfig[] = [
     icon: "🔎",
     category: "search",
   },
+  {
+    id: "nexus-browser",
+    name: "Nexus Browser",
+    description: "Nexus 浏览器引擎（17 个工具）：web_task 站点数据、CDP 附着、页面导航/点击/输入/截图/JS 执行",
+    enabled: true,
+    serverPath:
+      process.env.NEXT_PUBLIC_NEXUS_BROWSER_PYTHON ||
+      "/Users/mac/Desktop/nexus-browser/.venv/bin/python3",
+    serverArgs: [
+      process.env.NEXT_PUBLIC_NEXUS_BROWSER_MCP_PATH ||
+        "/Users/mac/Desktop/nexus-browser/mcp_server.py",
+    ].filter(Boolean),
+    timeout: 60000,
+    icon: "🌐",
+    category: "browser",
+  },
 ];
 
 /**
